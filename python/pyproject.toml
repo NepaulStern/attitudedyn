@@ -1,0 +1,45 @@
+[build-system]
+requires = [
+  "scikit-build-core>=0.10",
+  "pybind11>=2.12",
+  "numpy>=1.23",
+  "cmake>=3.15",
+  "ninja",
+]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "attitudedyn"
+version = "0.1.0"
+description = "Dynamic ordered-probit models for ordinal panel attitudes, over the shared attitudedyn C++ core."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [{ name = "Gabriel Mihalache" }]
+dependencies = [
+  "numpy>=1.23",
+  "scipy>=1.9",
+  "pandas>=1.5",
+]
+keywords = ["statistics", "panel", "ordered-probit", "attitudes"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: C++",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Science/Research",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.urls]
+Documentation = "https://github.com/gabrielgggg/attitudedyn/blob/master/notes/PYTHON_GUIDE.md"
+
+[tool.scikit-build]
+minimum-version = "0.10"
+cmake.build-type = "Release"
+wheel.packages = ["src/attitudedyn"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
