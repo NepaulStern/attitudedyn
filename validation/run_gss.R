@@ -15,9 +15,12 @@
 args <- commandArgs(trailingOnly = TRUE)
 threads <- 1L
 refit <- FALSE
+maxit <- 200L
 if ("--refit" %in% args) refit <- TRUE
 thread_flag <- match("--threads", args)
 if (!is.na(thread_flag)) threads <- as.integer(args[[thread_flag + 1L]])
+maxit_flag <- match("--maxit", args)
+if (!is.na(maxit_flag)) maxit <- as.integer(args[[maxit_flag + 1L]])
 
 file_arg <- grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)
 root <- if (file.exists("validation/gss_data.R")) {
@@ -58,13 +61,17 @@ formula <- cbind(ideology, military, welfare, immigrants, party, environment) ~
   0 + `(Intercept)` + age + hs + college + adv + female + white + black +
   inc_mid + inc_high
 control <- attitudedyn_control(
-  maxit = if (refit) 200L else 0L,
+  maxit = if (refit) maxit else 0L,
   n_threads = threads,
-  vcov = "none",
-  use_gradient = FALSE,
-  keep_scores = FALSE,
+  # Analytic gradient for the published specification (stable numerics and
+  # an identity contemporaneous correlation). Standard errors are the
+  # centred outer product printed with the replication estimates.
+  vcov = if (refit) "opg_centered" else "none",
+  use_gradient = if (refit) TRUE else FALSE,
+  keep_scores = refit,
   seed = 1
 )
+started <- proc.time()
 fit <- attitudedyn(
   formula,
   data = panel,
@@ -77,9 +84,29 @@ fit <- attitudedyn(
   start = unname(estimates),
   control = control
 )
+elapsed <- (proc.time() - started)[["elapsed"]]
 cat(sprintf("free_coefficients %d\n", length(coef(fit))))
 cat(sprintf("persons %d\n", fit$n_persons))
 cat(sprintf("loglik %.16f\n", fit$loglik))
 cat(sprintf("published_target %.2f\n", -111389.88))
-if (refit) cat(sprintf("convergence %d\n", fit$convergence))
+cat(sprintf("elapsed_seconds %.3f\n", elapsed))
+if (refit) {
+  out_dir <- file.path(root, "validation", "output")
+  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+  fit$elapsed_seconds <- elapsed
+  saveRDS(fit, file.path(out_dir, "gss_refit.rds"))
+  comparison <- gss_comparison(fit, log_path)
+  print_gss_comparison(comparison, elapsed = elapsed)
+  utils::write.csv(
+    comparison$coefficients,
+    file.path(out_dir, "gss_coefficient_comparison.csv"),
+    row.names = FALSE
+  )
+  utils::write.csv(
+    comparison$variance,
+    file.path(out_dir, "gss_variance_comparison.csv"),
+    row.names = FALSE
+  )
+  message("Saved the fit to ", file.path(out_dir, "gss_refit.rds"))
+}
 invisible(fit)

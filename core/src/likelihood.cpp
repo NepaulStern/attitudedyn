@@ -568,6 +568,16 @@ Evaluation evaluate_impl(const Problem& problem, const std::vector<double>& thet
   }
   const int n_grad = static_cast<int>(request.grad_columns.size());
   const detail::Unpacked unpacked = detail::unpack(problem.spec, theta_full, grad_of);
+  if (!unpacked.parameters_ok) {
+    // An exploratory step walked off the parameter domain. Return a
+    // non-finite objective and a finite gradient so a line search can
+    // reject the step instead of aborting the fit.
+    Evaluation rejected;
+    rejected.objective = -std::numeric_limits<double>::infinity();
+    rejected.person_loglik.assign(static_cast<std::size_t>(problem.persons.size()), 0.0);
+    rejected.gradient.assign(static_cast<std::size_t>(n_grad), 0.0);
+    return rejected;
+  }
   if (n_grad > 0 && request.numerics != Numerics::kStable) {
     throw std::invalid_argument(
         "Analytic gradients are available for numerics = \"stable\" only. "
@@ -670,6 +680,17 @@ Evaluation evaluate_impl(const Problem& problem, const std::vector<double>& thet
   // likely12. It is not added inside each person (covar does that, which
   // multiplies the penalty's score by the sample size; see the notes).
   out.objective = std::isfinite(total) ? total - out.penalty : total;
+  // A non-finite derivative must not reach a quasi-Newton update. Zero it.
+  // The objective itself stays put: a finite log-likelihood is still a
+  // usable trial, and a non-finite one is already the rejected step.
+  if (!std::isfinite(out.objective) || n_grad > 0) {
+    for (double& component : out.gradient) {
+      if (!std::isfinite(out.objective) || !std::isfinite(component)) component = 0.0;
+    }
+    if (!std::isfinite(out.objective) && !out.person_score.empty()) {
+      std::fill(out.person_score.begin(), out.person_score.end(), 0.0);
+    }
+  }
   if (!request.want_scores) out.person_score.clear();
   return out;
 }

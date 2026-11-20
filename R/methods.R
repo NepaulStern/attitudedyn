@@ -18,6 +18,7 @@ coef.attitudedyn <- function(object, scale = c("unconstrained", "natural"), ...)
 }
 
 natural_free_coefficients <- function(object) {
+  object <- ensure_problem(object)
   natural <- attitudedyn_natural_cpp(object$cache$problem, object$theta_full)
   J <- object$inputs$n_attitudes
   persistence <- matrix(natural$persistence, J, J, byrow = TRUE)
@@ -48,6 +49,7 @@ logLik.attitudedyn <- function(object, ...) {
 }
 
 person_scores <- function(object) {
+  object <- ensure_problem(object)
   scores <- object$scores
   if (is.null(scores)) {
     evaluation <- attitudedyn_eval_cpp(
@@ -73,6 +75,7 @@ opg_covariance <- function(scores, center = FALSE) {
 }
 
 numerical_hessian <- function(object) {
+  object <- ensure_problem(object)
   theta <- object$coefficients
   p <- length(theta)
   hessian <- matrix(0, p, p)
@@ -187,6 +190,7 @@ formula.attitudedyn <- function(x, ...) x$formula
 predict.attitudedyn <- function(object, type = c("prob", "class", "latent"),
                                 n_draws = NULL, seed = NULL, ...) {
   type <- match.arg(type)
+  object <- ensure_problem(object)
   if (is.null(n_draws)) n_draws <- max(20L, object$draws)
   if (is.null(seed)) seed <- object$control$seed + 1
   prediction <- attitudedyn_predict_cpp(

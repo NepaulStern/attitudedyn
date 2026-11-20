@@ -281,7 +281,8 @@ Unpacked unpack(const ModelSpec& spec, const std::vector<double>& theta_full,
     for (int attitude = 0; attitude < spec.n_attitudes; ++attitude) {
       for (int wave = 0; wave < spec.n_waves; ++wave) {
         const int slot = attitude * spec.n_waves + wave;
-        out.wave_effect[slot] = theta_full[index];
+        if (!std::isfinite(theta_full[index])) out.parameters_ok = false;
+        out.wave_effect[slot] = std::isfinite(theta_full[index]) ? theta_full[index] : 0.0;
         out.wave_grad[slot] = grad_at(index);
         ++index;
       }
@@ -290,7 +291,8 @@ Unpacked unpack(const ModelSpec& spec, const std::vector<double>& theta_full,
   for (int attitude = 0; attitude < spec.n_attitudes; ++attitude) {
     for (int column = 0; column < spec.n_covariates; ++column) {
       const int slot = attitude * spec.n_covariates + column;
-      out.beta[slot] = theta_full[index];
+      if (!std::isfinite(theta_full[index])) out.parameters_ok = false;
+      out.beta[slot] = std::isfinite(theta_full[index]) ? theta_full[index] : 0.0;
       out.beta_grad[slot] = grad_at(index);
       ++index;
     }
@@ -299,11 +301,17 @@ Unpacked unpack(const ModelSpec& spec, const std::vector<double>& theta_full,
     for (int from = 0; from < spec.n_attitudes; ++from) {
       const int slot = to * spec.n_attitudes + from;
       const double unconstrained = theta_full[index];
+      // A line search can propose +/-Inf. The transformed persistence would
+      // sit on the boundary, but the trial is not a point the likelihood
+      // should evaluate. Reject it the same way as an overflowing threshold.
       if (!std::isfinite(unconstrained)) {
-        throw std::invalid_argument("A persistence coefficient is not finite.");
+        out.parameters_ok = false;
+        out.rho[slot] = 0.0;
+        out.drho_dc[slot] = 0.0;
+      } else {
+        out.rho[slot] = persistence_from_unconstrained(unconstrained);
+        out.drho_dc[slot] = persistence_unconstrained_derivative(out.rho[slot]);
       }
-      out.rho[slot] = persistence_from_unconstrained(unconstrained);
-      out.drho_dc[slot] = persistence_unconstrained_derivative(out.rho[slot]);
       out.rho_grad[slot] = grad_at(index);
       ++index;
     }
@@ -311,7 +319,8 @@ Unpacked unpack(const ModelSpec& spec, const std::vector<double>& theta_full,
   for (int factor = 0; factor < spec.n_factors; ++factor) {
     for (int attitude = 0; attitude < spec.n_attitudes; ++attitude) {
       const int slot = factor * spec.n_attitudes + attitude;
-      out.loading[slot] = theta_full[index];
+      if (!std::isfinite(theta_full[index])) out.parameters_ok = false;
+      out.loading[slot] = std::isfinite(theta_full[index]) ? theta_full[index] : 0.0;
       out.loading_grad[slot] = grad_at(index);
       ++index;
     }
@@ -321,7 +330,12 @@ Unpacked unpack(const ModelSpec& spec, const std::vector<double>& theta_full,
   std::vector<double> chol(static_cast<std::size_t>(n_chol), 0.0);
   bool any_chol = false;
   for (int entry = 0; entry < n_chol; ++entry) {
-    chol[entry] = theta_full[index];
+    if (!std::isfinite(theta_full[index])) {
+      out.parameters_ok = false;
+      chol[entry] = 0.0;
+    } else {
+      chol[entry] = theta_full[index];
+    }
     if (chol[entry] != 0.0) any_chol = true;
     if (grad_at(index) >= 0) {
       out.chol_position.push_back(index);
@@ -347,17 +361,22 @@ Unpacked unpack(const ModelSpec& spec, const std::vector<double>& theta_full,
     const int n_increments = K - 2;
     for (int increment = 0; increment < n_increments; ++increment) {
       const double unconstrained = theta_full[index];
-      if (!std::isfinite(unconstrained) || unconstrained > 50.0) {
-        throw std::invalid_argument(
-            "A threshold increment is not finite, or exp(threshold) overflowed. "
-            "Threshold coefficients are the log gaps between interior cuts.");
+      // exp(50) is about 5e21. Past that, the gap and its derivative overflow
+      // and the ordered cuts stop being finite. That is a bad trial step, not
+      // a broken model: leave a zero gap and let the caller reject the point.
+      const bool gap_ok = std::isfinite(unconstrained) && unconstrained <= 50.0;
+      if (!gap_ok) out.parameters_ok = false;
+      const double gap = gap_ok ? std::exp(unconstrained) : 0.0;
+      if (!std::isfinite(gap)) out.parameters_ok = false;
+      accumulated += std::isfinite(gap) ? gap : 0.0;
+      if (!std::isfinite(accumulated)) {
+        out.parameters_ok = false;
+        accumulated = 0.0;
       }
-      const double gap = std::exp(unconstrained);
-      accumulated += gap;
       out.threshold[base + increment + 2] = accumulated;
       ThresholdIncrement piece;
       piece.grad = grad_at(index);
-      piece.exp_c = gap;
+      piece.exp_c = std::isfinite(gap) ? gap : 0.0;
       piece.first_cut = increment + 2;
       out.threshold_increments[attitude].push_back(piece);
       ++index;

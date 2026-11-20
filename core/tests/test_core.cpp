@@ -4,6 +4,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <vector>
@@ -213,6 +214,33 @@ int main() {
   const Evaluation threaded_eval = evaluate_full(small_problem, small_problem.theta_full, threaded);
   check(threaded_eval.objective == analytic.objective, "thread count does not change the loglik");
   check(threaded_eval.gradient == analytic.gradient, "thread count does not change the gradient");
+
+  std::vector<double> extreme_theta = small_problem.theta_full;
+  bool saw_threshold = false;
+  for (int i = 0; i < small_problem.layout.n_full; ++i) {
+    if (small_problem.layout.entries[i].block == "threshold") {
+      extreme_theta[i] = 80.0;
+      saw_threshold = true;
+    }
+  }
+  check(saw_threshold, "small panel has a threshold coefficient");
+  const Evaluation extreme_eval = evaluate_full(small_problem, extreme_theta, gradient_request);
+  check(!std::isfinite(extreme_eval.objective), "overflowing threshold objective is not finite");
+  check(extreme_eval.gradient.size() == free_columns.size(), "overflowing threshold keeps the gradient length");
+  bool extreme_gradient_finite = true;
+  for (double component : extreme_eval.gradient) {
+    if (!std::isfinite(component)) extreme_gradient_finite = false;
+  }
+  check(extreme_gradient_finite, "overflowing threshold gradient is finite");
+  for (int i = 0; i < small_problem.layout.n_full; ++i) {
+    if (small_problem.layout.entries[i].block == "persistence") {
+      extreme_theta[i] = std::numeric_limits<double>::infinity();
+    }
+  }
+  EvaluateRequest extreme_value;
+  extreme_value.n_threads = 1;
+  const Evaluation infinite_eval = evaluate_full(small_problem, extreme_theta, extreme_value);
+  check(!std::isfinite(infinite_eval.objective), "non-finite persistence is a non-finite objective");
 
   const ImpulseResponse irf = impulse_response(
       natural_parameters(small_problem.spec, small_problem.theta_full).persistence, 2, 4);
