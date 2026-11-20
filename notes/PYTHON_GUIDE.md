@@ -88,7 +88,9 @@ python python/validation/run_gss.py --refit --threads 4 --maxit 200
 ```
 
 The first command evaluates the shipped coefficients. With Philox, seed 1,
-and 10 antithetic draws the log-likelihood is `-111570.97022260929`.
+and 10 antithetic draws the log-likelihood is `-111570.97022260929` on the
+libm that produced that figure. Another math library can move the sum by a
+few units in the last place; the test allows an absolute gap under `1e-9`.
 `--refit` starts BFGS from those coefficients and writes the comparison,
 the persistence matrix, the variance decomposition, and the impulse
 responses under `validation/output/`.

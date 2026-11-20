@@ -102,8 +102,14 @@ def test_philox_loglik_and_gradient_match_across_threads(gss_panel):
     one = attitudedyn.fit(gss_panel, threads=1, **kwargs)
     four = attitudedyn.fit(gss_panel, threads=4, **kwargs)
     assert one.nobs == 11252
-    assert one.loglik == pytest.approx(PHILOX_LOGLIK, abs=1e-12, rel=0)
-    assert four.loglik == pytest.approx(PHILOX_LOGLIK, abs=1e-12, rel=0)
+    # The reference value is one double. Its unit in the last place is about
+    # 1.5e-11, so an absolute gap below 1e-12 is the same double. glibc on
+    # the machine that produced the reference matches it. Another libm moves
+    # the sum by a few ulps (about 1.5e-11 on a newer glibc, about 1.8e-10
+    # with the Windows CRT) because erfc, exp, and log are not bit-identical.
+    # 1e-9 still rejects a wrong likelihood and covers that library gap.
+    assert one.loglik == pytest.approx(PHILOX_LOGLIK, abs=1e-9, rel=0)
+    assert four.loglik == pytest.approx(PHILOX_LOGLIK, abs=1e-9, rel=0)
     assert one.loglik == four.loglik
     assert one.gradient is not None and four.gradient is not None
     assert one.gradient.shape == (164,)
