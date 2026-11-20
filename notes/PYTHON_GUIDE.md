@@ -56,12 +56,14 @@ splits the person loop. Each thread writes its own person contributions, and
 the main thread adds those contributions in person order, so the
 log-likelihood and the gradient do not depend on the thread count.
 
-BFGS and L-BFGS-B minimise the negative log-likelihood. The gradient passed
-to them is the analytic gradient from the core. If a trial coefficient is
-not finite, or a threshold increment is large enough that `exp` of it would
-overflow, the core returns a non-finite objective and a zero gradient. The
-wrapper turns that objective into `1e12` so the line search can reject the
-step and continue. The reported fit is the best finite point seen during
+BFGS minimises the negative log-likelihood with the same Nash iteration
+as `stats::optim(method = "BFGS")`, so the same start, analytic gradient,
+and `reltol` take the same steps as the R package. L-BFGS-B uses SciPy.
+The gradient is the analytic gradient from the core. If a trial coefficient
+is not finite, or a threshold increment is large enough that `exp` of it
+would overflow, the core returns a non-finite objective and a zero gradient.
+The wrapper turns that objective into `1e12` so the line search can reject
+the step and continue. The reported fit is the best finite point seen during
 the search.
 
 Standard errors default to the inverse outer product of the person scores
@@ -84,16 +86,20 @@ free coefficients, standard errors, and variance decomposition are in
 
 ```bash
 python python/validation/run_gss.py --threads 4
-python python/validation/run_gss.py --refit --threads 4 --maxit 200
+python python/validation/replicate_gss_exhibits.py --threads 4
+python python/validation/run_gss.py --refit --threads 4
 ```
 
 The first command evaluates the shipped coefficients. With Philox, seed 1,
 and 10 antithetic draws the log-likelihood is `-111570.97022260929` on the
 libm that produced that figure. Another math library can move the sum by a
 few units in the last place; the test allows an absolute gap under `1e-9`.
-`--refit` starts BFGS from those coefficients and writes the comparison,
-the persistence matrix, the variance decomposition, and the impulse
-responses under `validation/output/`.
+`replicate_gss_exhibits.py` is that same evaluation plus the centred
+outer-product standard errors, and it writes the coefficient table, the
+persistence matrix, the variance decomposition, the impulse responses, and
+`notes/GSS_EXHIBITS.md`. `--refit` starts BFGS from those coefficients and
+runs until the relative tolerance is met. Pass `--maxit` only to impose a
+cap.
 
 The published Fortran objective at the same coefficients is not that
 number. The package generator is Philox. The check above is the Philox

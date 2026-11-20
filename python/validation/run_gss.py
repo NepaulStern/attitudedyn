@@ -5,7 +5,7 @@ From the repository root, with the Python package installed::
 
     python python/validation/run_gss.py
     python python/validation/run_gss.py --threads 4
-    python python/validation/run_gss.py --refit --threads 4 --maxit 200
+    python python/validation/run_gss.py --refit --threads 4
 
 The default call evaluates the shipped free coefficients with Philox draws
 and does not start the optimiser. ``--refit`` continues from those values.
@@ -145,8 +145,21 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate or refit the GSS attitude model.")
     parser.add_argument("--refit", action="store_true", help="Start BFGS from the shipped coefficients.")
     parser.add_argument("--threads", type=int, default=1)
-    parser.add_argument("--maxit", type=int, default=200)
+    parser.add_argument(
+        "--maxit",
+        type=int,
+        default=None,
+        help="Iteration cap. The default evaluates the start, or, with --refit, runs until convergence.",
+    )
+    parser.add_argument("--trace", action="store_true", help="Print the log-likelihood at each BFGS iteration.")
     args = parser.parse_args()
+    if args.refit:
+        # No iteration cap unless one is asked for. Stopping is the same
+        # relative tolerance stats::optim uses, so the search ends when the
+        # objective stops improving.
+        maxit = 10**9 if args.maxit is None else args.maxit
+    else:
+        maxit = 0 if args.maxit is None else args.maxit
     root = repository_root()
     data_path, log_path = gss_paths(root)
     panel = read_gss(data_path)
@@ -176,11 +189,12 @@ def main() -> None:
         add_intercept=False,
         start=estimates.to_numpy(),
         threads=args.threads,
-        maxit=args.maxit if args.refit else 0,
+        maxit=maxit,
         vcov="opg_centered" if args.refit else "none",
         use_gradient=bool(args.refit),
         keep_scores=bool(args.refit),
         seed=1,
+        trace=bool(args.trace),
     )
     elapsed = time.perf_counter() - started
     order = fortran_names(result.layout)
@@ -220,6 +234,12 @@ def main() -> None:
         print_comparison(compared, result.loglik, result.convergence, elapsed)
         compared["coefficients"].to_csv(out_dir / "gss_coefficient_comparison.csv", index=False)
         compared["variance"].to_csv(out_dir / "gss_variance_comparison.csv", index=False)
+        np.savez(
+            out_dir / "gss_refit.npz",
+            coefficients=result.params.to_numpy(),
+            loglik=np.array(result.loglik),
+            convergence=np.array(result.convergence),
+        )
         print(f"Saved the comparison under {out_dir}")
     else:
         print(f"\nSaved persistence, variance, and impulse responses under {out_dir}")
