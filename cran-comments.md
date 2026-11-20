@@ -7,7 +7,7 @@
 
 There were no ERRORs or WARNINGs.
 
-The incoming-feasibility check reports one NOTE: this is a new submission. That NOTE also prints `LICENSE`, which is the usual check for `License: MIT + file LICENSE`.
+The incoming-feasibility check reports one NOTE: this is a new submission.
 
 Two further NOTEs appear only on this Ubuntu build of R, and not from the package:
 
@@ -18,6 +18,11 @@ The C++ specification check is OK. It prints the standard line that not all R pl
 
 Examples for every exported function finish in well under a second. The spelling word list is clean. `DESCRIPTION` cites Nepaul and Stern (2026) as `<doi:10.1017/pan.2026.10034>`. The project site, the article, and the replication-package URLs in `DESCRIPTION` resolve.
 
-## This is a new submission
+## Resubmission
 
-No previous CRAN submission of `attitudedyn`.
+This is a resubmission of version 0.1.0. The previous upload was not accepted because `License: MIT + file LICENSE` shipped the full MIT text in `LICENSE`, which `R CMD check` reported as `License stub is invalid DCF`. `LICENSE` is now the two-line stub:
+
+    YEAR: 2026
+    COPYRIGHT HOLDER: Gabriel Mihalache
+
+The full MIT text is in `LICENSE.md` at the repository root. That file is listed in `.Rbuildignore` and is not included in the package tarball.

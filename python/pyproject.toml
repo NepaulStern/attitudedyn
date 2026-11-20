@@ -15,7 +15,7 @@ description = "The Nepaul-Stern Model of Attitude Stability and Constraint for L
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
-license-files = ["LICENSE"]
+license-files = ["LICENSE.md"]
 authors = [{ name = "Gabriel Mihalache", email = "mihalache.2@osu.edu" }]
 maintainers = [{ name = "Gabriel Mihalache", email = "mihalache.2@osu.edu" }]
 dependencies = [
