@@ -1,0 +1,133 @@
+# Publish wheels and an sdist with PyPI trusted publishing (OIDC).
+# A version tag v* publishes to PyPI. A manual run publishes to TestPyPI.
+# Branch pushes and pull requests do not publish.
+#
+# Pending publisher on PyPI and on TestPyPI (owner gabrielgggg,
+# repository attitudedyn):
+#   workflow filename: pypi-publish.yml
+#   PyPI environment: pypi
+#   TestPyPI environment: testpypi
+name: Publish Python package
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  check_version:
+    name: version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require the same version in R and Python
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import os
+          import pathlib
+          import re
+          import tomllib
+
+          root = pathlib.Path(".")
+          pyproject = tomllib.loads((root / "python/pyproject.toml").read_text())
+          py_version = pyproject["project"]["version"]
+          init_text = (root / "python/src/attitudedyn/__init__.py").read_text()
+          init_version = re.search(r'^__version__ = "([^"]+)"', init_text, re.M).group(1)
+          description = (root / "DESCRIPTION").read_text()
+          r_version = re.search(r"^Version:\s*(\S+)", description, re.M).group(1)
+          if not (py_version == init_version == r_version):
+              raise SystemExit(
+                  "R and Python versions differ: "
+                  f"DESCRIPTION {r_version}, pyproject {py_version}, "
+                  f"__init__ {init_version}"
+              )
+          if os.environ["EVENT_NAME"] == "push":
+              tag = os.environ["REF_NAME"]
+              expected = f"v{py_version}"
+              if tag != expected:
+                  raise SystemExit(f"tag {tag} does not match version {expected}")
+          print(f"version {py_version}")
+          PY
+
+  build_wheels:
+    name: wheels
+    needs: check_version
+    uses: ./.github/workflows/python-wheels.yml
+
+  build_sdist:
+    name: sdist
+    needs: check_version
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Stage the C++ core inside the Python project
+        run: python python/tools/stage_wheel_project.py
+
+      - name: Build the sdist outside the git checkout
+        run: |
+          python -m pip install --upgrade build
+          rm -rf "${RUNNER_TEMP}/attitudedyn-sdist-src"
+          cp -a wheel-stage "${RUNNER_TEMP}/attitudedyn-sdist-src"
+          python -m build --sdist --outdir dist "${RUNNER_TEMP}/attitudedyn-sdist-src"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sdist
+          path: dist/*.tar.gz
+
+  publish_pypi:
+    name: publish to PyPI
+    needs: [build_wheels, build_sdist]
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/attitudedyn
+    permissions:
+      id-token: write
+      actions: read
+    steps:
+      - name: Download the wheels and the sdist
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*"
+          merge-multiple: true
+          path: dist
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+
+  publish_testpypi:
+    name: publish to TestPyPI
+    needs: [build_wheels, build_sdist]
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/attitudedyn
+    permissions:
+      id-token: write
+      actions: read
+    steps:
+      - name: Download the wheels and the sdist
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*"
+          merge-multiple: true
+          path: dist
+
+      - name: Publish to TestPyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          skip-existing: true

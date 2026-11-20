@@ -1,13 +1,12 @@
 # Build wheels with cibuildwheel and run pytest on each wheel.
 # Artifacts are uploaded. Nothing is published to PyPI.
+# Version tags are built by pypi-publish.yml, which calls this workflow.
+# A manual run of this file only builds wheels.
 name: python-wheels
 
 on:
+  workflow_call:
   workflow_dispatch:
-  push:
-    tags:
-      - "v*"
-      - "*.*.*"
 
 jobs:
   build_wheels:
