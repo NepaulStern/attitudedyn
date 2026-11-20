@@ -1,9 +1,16 @@
 """Write alecia_oracle.f and the method=0 parameter file used by the oracle."""
 
+import importlib.util
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-SRC = (ROOT / "src" / "alecia_parallel.f").read_text()
+_spec = importlib.util.spec_from_file_location("fetch_vendor", ROOT / "fetch_vendor.py")
+if _spec is None or _spec.loader is None:
+    raise SystemExit("Could not load fetch_vendor.py")
+_fetch = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_fetch)
+_fetch.ensure_downloaded(ROOT / "vendor")
+SRC = (ROOT / "vendor" / "alecia_parallel.f").read_text()
 
 MAIN_OLD = """      if(method.eq.0)then
          call parset0(parm,nparm)
@@ -232,7 +239,7 @@ def x_vector(log_path):
 
 
 header, nseg, coef, icoef, labels = fortran_values(ROOT / "src" / "alecia.p.gss")
-names, values = x_vector(ROOT / "src" / "gss_log.txt")
+names, values = x_vector(ROOT / "vendor" / "gss_log.txt")
 free_labels = [labels[i] for i in range(len(labels)) if icoef[i] == 0]
 if free_labels != names:
     for i, (a, b) in enumerate(zip(free_labels, names)):

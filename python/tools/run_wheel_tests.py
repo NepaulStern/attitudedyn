@@ -2,7 +2,8 @@
 """Run the pytest suite against the wheel installed in this interpreter.
 
 The working directory of a cibuildwheel test is outside the checkout, so the
-GSS files are found through ``ATTDYN_REPOSITORY_ROOT``.
+checkout is found through ``ATTDYN_REPOSITORY_ROOT``. GSS tests run only when
+the Dataverse files have been downloaded into ``validation/fortran/vendor``.
 """
 
 from __future__ import annotations

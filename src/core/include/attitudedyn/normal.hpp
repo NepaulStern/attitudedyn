@@ -67,8 +67,8 @@ inline double standard_normal_log_sf(double x) {
 }
 
 // log(Phi(b) - Phi(a)), stable when both limits sit in the same tail.
-// This replaces the Fortran tail blend (probmake1), which is discontinuous
-// at -4 and -5. See notes/DISCREPANCIES.md.
+// This is the default (numerics = "stable") and the probability used by
+// the analytic gradient.
 inline double log_normal_interval(double lower, double upper) {
   if (!(upper > lower) || !std::isfinite(lower) || !std::isfinite(upper)) {
     return -std::numeric_limits<double>::infinity();
@@ -153,12 +153,10 @@ inline double standard_normal_quantile(double p) {
   return x;
 }
 
-// Fortran probmake1, including the tail blend and pi = 3.1415.
-// `cdf` is injected so the shared-math oracle and this function call the
-// same Phi. The blend weight is the original one: it is 1 at the inner
-// edge (-4) and 0 at -5, which is the reverse of a smooth handover and
-// makes the approximation discontinuous at -4. Kept only for the
-// Fortran comparison (numerics = "shared").
+// The original program's normal-probability routine (probmake1), including
+// its tail blend and pi = 3.1415. `cdf` is injected so the comparison
+// driver and this function call the same Phi. numerics = "shared"
+// reproduces that routine for comparisons.
 template <typename Cdf>
 inline double fortran_log_interval(double arg1, double arg2, Cdf cdf) {
   const double big1 = 4.0;

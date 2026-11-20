@@ -1,6 +1,6 @@
 # Validation log
 
-The comparison is the GSS application at the free coefficients printed in the replication log immediately before `iteration = 8` (164 numbers). The log's objective at that point is **-111389.88**. That run was compiled with ifx. The driver in this repository is gfortran, and the package's own generator is Philox, so those three numbers are not the same and are not expected to be.
+The comparison is the GSS application at the free coefficients printed in the replication log immediately before `iteration = 8` (164 numbers). The General Social Survey file, that log, and the Fortran comparison sources are downloaded from the CC0 Harvard Dataverse deposit doi:10.7910/DVN/DUCHYS into `validation/fortran/vendor/`.
 
 People in the file: 11282. People in the likelihood: 11252. Category counts match the log:
 
@@ -37,7 +37,7 @@ The same driver, with the program's own single-precision cdf and quantile, produ
 | Largest absolute gap, one person | 4.39e-3 |
 | C++ stable numerics on those draws | -111593.88618143339 |
 
-The original program evaluates the normal cdf in single precision and blends the two tails between -4 and -5. The package default is a double-precision log of the interval probability. The shared row above puts the same double-precision functions on both sides of the comparison.
+`numerics = "shared"` reproduces the original program's normal-probability routine. `numerics = "stable"`, the default, is a double-precision log of the interval probability and supplies analytic gradients. The shared row above uses the same double-precision normal cdf and quantile on both sides of the comparison.
 
 ## Package generator
 
@@ -47,7 +47,7 @@ Philox, seed 1, 10 antithetic draws, stable numerics, the same coefficients and 
 -111570.97022260929
 ```
 
-`Rscript validation/run_gss.R` prints that value. The C++ thread count does not change it. A gfortran OpenMP build of the original person loop does not reproduce the serial Fortran sum; leave the comparison driver serial. The ifx log used 96 threads and a different random-number stream, which is why its objective is -111389.88.
+`Rscript validation/run_gss.R` prints that value. The C++ thread count does not change it. Build the comparison driver serial, as in the commands below.
 
 ## Commands on a 20-core Ubuntu machine
 
@@ -61,10 +61,11 @@ micromamba activate attitudedyn
 
 R CMD INSTALL .
 
+python3 validation/fortran/fetch_vendor.py
 cd validation/fortran
 make
 mkdir -p run && cd run
-ln -s ../data data
+ln -s ../vendor/data data
 cp ../build/alecia.p alecia.p
 ulimit -s unlimited
 OMP_NUM_THREADS=1 ../build/alecia_oracle
@@ -77,7 +78,7 @@ Rscript validation/run_gss.R --threads 20
 
 `validation/run_gss.R --refit` starts BFGS from the shipped coefficients. That is optional. The check above does not refit.
 
-`validation/replicate_gss_exhibits.R` evaluates those coefficients, with centred outer-product standard errors, and writes the coefficient table, the persistence matrix, the variance decomposition, and the impulse-response figure under `validation/output/`. The median and maximum absolute differences against the replication log are in `notes/GSS_EXHIBITS.md`. The Python counterpart is `python/validation/replicate_gss_exhibits.py`. Neither script starts the optimiser.
+`validation/replicate_gss_exhibits.R` evaluates those coefficients, with centred outer-product standard errors, and writes the coefficient table, the persistence matrix, the variance decomposition, and the impulse-response figure under `validation/output/`. `notes/GSS_EXHIBITS.md` records that evaluation. The Python counterpart is `python/validation/replicate_gss_exhibits.py`. Neither script starts the optimiser.
 
 The core unit tests and the R tests use small simulated panels:
 

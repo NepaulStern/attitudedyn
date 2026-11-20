@@ -20,7 +20,7 @@ The published specification has two standard normal person factors, uncorrelated
 
 The default generator is Philox, a counter-based generator. The counter is the person, the draw, and a stream number. Factor `f` uses stream `f`. The shock of attitude `a` at wave `t` uses stream `n_factors + a * n_waves + t`. Antithetic sampling flips the sign of the normal, which doubles the number of paths. Halton and Sobol are available; both are Owen-scrambled and keyed by the person, and the Sobol sequence skips the origin. The generator is not a bit-for-bit copy of the generator in the replication program. Two runs with the same seed, the same draws, and the same data produce the same log-likelihood, including across thread counts.
 
-The default probability of an interval is the double-precision log of `Phi(b) - Phi(a)`, and the gradient of that simulator is analytic. `numerics = "shared"` uses the tail blend from the replication program together with the same double-precision normal cdf and quantile the comparison driver uses. That setting is for the comparison. It does not return a gradient.
+The default probability of an interval is the double-precision log of `Phi(b) - Phi(a)`. That setting, `numerics = "stable"`, supplies the analytic gradient. `numerics = "shared"` reproduces the original program's normal-probability routine for comparisons. Analytic gradients are available for `numerics = "stable"` only.
 
 `contemporaneous = "free"` estimates a within-wave correlation factor. The analytic gradient is not provided for that case, and the fit says so.
 
@@ -32,4 +32,4 @@ The default probability of an interval is the double-precision log of `Phi(b) - 
 
 ## What is deliberately outside the package
 
-The optimiser, the line search, and the linear-algebra routines that the replication program links are not part of the package. The comparison driver under `validation/fortran/` links them so that it can execute the original likelihood. The R package calls `stats::optim` for BFGS and Nelder-Mead, and a short scoring loop for BHHH.
+The optimiser, the line search, and the linear-algebra routines that the replication program links are not part of the package. The comparison driver under `validation/fortran/` downloads them from the CC0 Harvard Dataverse deposit doi:10.7910/DVN/DUCHYS into a git-ignored folder and links them so that it can execute the original likelihood. The R package calls `stats::optim` for BFGS and Nelder-Mead, and a short scoring loop for BHHH.

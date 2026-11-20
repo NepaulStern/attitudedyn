@@ -1,7 +1,6 @@
 // Double-precision Phi and Phi^{-1} shared with the C++ likelihood.
-// The Fortran oracle calls these when ATTDYN_SHARED_MATH=1, so the
-// comparison is not mixed up with anormc's single-precision erfc or
-// with mdnris. gfortran appends one underscore.
+// The Fortran comparison driver calls these when ATTDYN_SHARED_MATH=1.
+// gfortran appends one underscore.
 
 #include "attitudedyn/normal.hpp"
 

@@ -7,7 +7,7 @@ The replication program is fixed-form Fortran. The package keeps the same quanti
 | `likely12` | the objective returned by the core | Sum of the person log-likelihoods, minus one penalty |
 | `likobs12` | one person's contribution | Log mean of the simulated paths |
 | `preplik12` | the latent update inside a path | Covariate index, wave effect, factor, and the lagged latent attitude |
-| `probmake1` | `numerics = "shared"` | Interval probability with the original tail blend |
+| `probmake1` | `numerics = "shared"` | The original program's normal-probability routine, for comparisons |
 | `ghk1` | `fortran_ghk = TRUE` | Within-wave conditioning when the shocks are correlated |
 | `fixef{a}{t}` | `wave_effect[attitude, wave]` | Wave effect for one attitude |
 | `beta` | `beta[attitude, covariate]` | Slope, on the latent scale |

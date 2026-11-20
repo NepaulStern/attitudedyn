@@ -13,9 +13,8 @@
 
 namespace attitudedyn {
 
-// kStable: double-precision log(Phi(b)-Phi(a)), analytic gradient.
-// kShared: Fortran probmake1 tail blend, but with the same double-precision
-//          Phi and Phi^{-1} the patched Fortran oracle calls. No gradient.
+// kStable: the default. Double-precision log(Phi(b)-Phi(a)), with analytic gradients.
+// kShared: reproduces the original program's normal-probability routine for comparisons.
 enum class Numerics {
   kStable = 0,
   kShared = 1

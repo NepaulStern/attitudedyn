@@ -11,7 +11,7 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-Nepaul and Stern (2026) estimate The Nepaul-Stern Model of Attitude Stability and Constraint on six GSS Likert items, using four stacked rotating panels from 2006 to 2020: ideological identification, military spending, welfare spending, the number of immigrants, party identification, and environmental spending. The replication program reads `gss2.prn`, collapses person-waves to people, and uses a common time grid
+Nepaul and Stern (2026) estimate The Nepaul-Stern Model of Attitude Stability and Constraint on six GSS Likert items, using four stacked rotating panels from 2006 to 2020: ideological identification, military spending, welfare spending, the number of immigrants, party identification, and environmental spending. The survey file comes from their replication deposit on Harvard Dataverse (doi:10.7910/DVN/DUCHYS), dedicated to the public domain under CC0 1.0. The replication program reads `gss2.prn`, collapses person-waves to people, and uses a common time grid
 
 ```{r}
 gss_time_grid <- c(2, 3, 4, 5, 6, 7, 8, 10)
@@ -43,4 +43,4 @@ fit <- attitudedyn(
 
 The constant is 1 on a wave that is in the text file and 0 on a wave that is only there because it sits between a person's first and last waves. `validation/run_gss.R` builds that column and evaluates the shipped coefficients.
 
-The replication program reports a log-likelihood of -111,389.88 at the shipped coefficients and at that run's random draws. A different random-number generator will not reproduce those digits. `validation/compare_gss` checks the likelihood on the same prepared sample and the same draws. On that comparison the likelihoods agree.
+`validation/compare_gss` checks the likelihood on the same prepared sample and the same draws. On that comparison the likelihoods agree. The package evaluation of the replication estimates uses Philox draws, seed 1, and 10 antithetic pairs.

@@ -12,6 +12,8 @@ from __future__ import annotations
 
 import os
 import re
+import subprocess
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -71,47 +73,58 @@ _ESTIMATE_ROW = re.compile(
 _NUMBER = re.compile(r"-?[0-9]+\.[0-9]+")
 
 
-def _contains_gss_file_and_core(candidate: Path) -> bool:
-    """True when this directory is a checkout with the GSS file and src/core."""
-    data = candidate / "validation" / "fortran" / "data" / "gss2.prn"
+def _contains_core(candidate: Path) -> bool:
+    """True when this directory is a checkout of the C++ core."""
     core_header = candidate / "src" / "core" / "include" / "attitudedyn" / "api.hpp"
-    return data.exists() and core_header.exists()
+    return core_header.is_file()
 
 
 def repository_root() -> Path:
-    """Return the checkout that contains ``src/core`` and the GSS file.
+    """Return the checkout that contains ``src/core``.
 
     ``ATTDYN_REPOSITORY_ROOT`` overrides the search. Wheel tests set it
-    because pytest's working directory is outside the checkout.
+    because pytest's working directory is outside the checkout. The GSS
+    file is downloaded separately into ``validation/fortran/vendor``.
     """
     override = os.environ.get("ATTDYN_REPOSITORY_ROOT")
     if override:
         candidate = Path(override)
-        if not _contains_gss_file_and_core(candidate):
+        if not _contains_core(candidate):
             raise FileNotFoundError(
-                f"ATTDYN_REPOSITORY_ROOT={override} does not contain the GSS file and the C++ core."
+                f"ATTDYN_REPOSITORY_ROOT={override} does not contain the C++ core."
             )
         return candidate
     starts = [Path.cwd(), Path(__file__).resolve()]
     for origin in starts:
         for candidate in [origin, *origin.parents]:
-            data = candidate / "validation" / "fortran" / "data" / "gss2.prn"
-            core = candidate / "src" / "core" / "include" / "attitudedyn" / "api.hpp"
-            if data.exists() and core.exists():
+            if _contains_core(candidate):
                 return candidate
     raise FileNotFoundError(
-        "Could not find the attitudedyn repository (expected validation/fortran/data/gss2.prn). "
+        "Could not find the attitudedyn repository (expected src/core/include/attitudedyn/api.hpp). "
         "Run from a checkout of the repository."
     )
 
 
 def gss_paths(root: Path | None = None) -> tuple[Path, Path]:
-    """Return ``(gss2.prn, gss_log.txt)``."""
+    """Return ``(gss2.prn, gss_log.txt)`` under the git-ignored vendor directory."""
     base = repository_root() if root is None else root
+    vendor = base / "validation" / "fortran" / "vendor"
     return (
-        base / "validation" / "fortran" / "data" / "gss2.prn",
-        base / "validation" / "fortran" / "src" / "gss_log.txt",
+        vendor / "data" / "gss2.prn",
+        vendor / "gss_log.txt",
     )
+
+
+def ensure_replication_files(root: Path | None = None) -> tuple[Path, Path]:
+    """Download the CC0 Dataverse files if needed and return ``(gss2.prn, gss_log.txt)``.
+
+    The files come from doi:10.7910/DVN/DUCHYS and are stored in
+    ``validation/fortran/vendor/``, which is git-ignored.
+    """
+    base = repository_root() if root is None else root
+    script = base / "validation" / "fortran" / "fetch_vendor.py"
+    subprocess.check_call([sys.executable, str(script)])
+    return gss_paths(base)
 
 
 def read_gss(path: Path | None = None, n_rows: int = 21648) -> pd.DataFrame:
@@ -120,7 +133,7 @@ def read_gss(path: Path | None = None, n_rows: int = 21648) -> pd.DataFrame:
     Parameters
     ----------
     path :
-        File path. The default is the copy shipped under ``validation/fortran/data``.
+        File path. The default is the copy downloaded under ``validation/fortran/vendor/data``.
     n_rows :
         Number of person-wave rows the program reads.
 

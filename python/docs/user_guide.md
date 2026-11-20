@@ -32,12 +32,12 @@ Estimation uses a long file: one row is one person in one wave.
 | covariates | Numeric. A missing covariate is an error unless `na_action="omit"`, which drops those person-waves. Missing Likert answers stay. |
 | `weight` | Optional. Zero or positive, and the same for every wave of a person. The sample log-likelihood adds up the person contributions with these weights. |
 
-From a checkout, `attitudedyn.gss.read_gss` reads the replication file `validation/fortran/data/gss2.prn`. `OUTCOMES`, `COVARIATES`, and `TIME_GRID` are the column lists and the wave dates used below. Run this from the repository root so the path resolves.
+The General Social Survey extract in this guide comes from the replication deposit on Harvard Dataverse (doi:10.7910/DVN/DUCHYS), dedicated to the public domain under CC0 1.0. From a checkout, `python3 validation/fortran/fetch_vendor.py` downloads it, and `attitudedyn.gss.read_gss` reads `validation/fortran/vendor/data/gss2.prn`. `OUTCOMES`, `COVARIATES`, and `TIME_GRID` are the column lists and the wave dates used below. Run this from the repository root so the path resolves.
 
 ```python
 from attitudedyn.gss import COVARIATES, OUTCOMES, TIME_GRID, read_gss, read_gss_estimates
 
-panel = read_gss("validation/fortran/data/gss2.prn")
+panel = read_gss("validation/fortran/vendor/data/gss2.prn")
 panel.head(8)
 ```
 
@@ -141,7 +141,7 @@ environment: -100.000000 0.000000 1.378685 100.000000
 The call below starts from the replication estimates and evaluates them. It does not search. Run it from the repository root, after the panel has been read. On 4 cores the evaluation takes a few seconds. `start` is the 164 free coefficients in `result.params` order.
 
 ```python
-estimates = read_gss_estimates("validation/fortran/src/gss_log.txt")
+estimates = read_gss_estimates("validation/fortran/vendor/gss_log.txt")
 result = attitudedyn.fit(
     panel,
     outcomes=OUTCOMES,

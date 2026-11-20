@@ -75,7 +75,7 @@ Notes on the source layout, for someone changing the package, are in `notes/R_EC
 
 ## The General Social Survey application
 
-The guide is the walkthrough. The replication file is `validation/fortran/data/gss2.prn`: 11,282 people in the file and 11,252 in the likelihood, with 164 free coefficients. Evaluating the replication estimates, with the default of 10 random draws and seed 1, gives log-likelihood -111570.9702226093. `summary()` prints that value rounded.
+The guide is the walkthrough. The General Social Survey file comes from the replication deposit on Harvard Dataverse (doi:10.7910/DVN/DUCHYS), dedicated to the public domain under CC0 1.0. `python3 validation/fortran/fetch_vendor.py` downloads that file, the replication log, and the Fortran comparison sources into `validation/fortran/vendor/`. The file has 11,282 people and 11,252 of them enter the likelihood, with 164 free coefficients. Evaluating the replication estimates, with the default of 10 random draws and seed 1, gives log-likelihood -111570.9702226093. `summary()` prints that value rounded.
 
 On 4 processor cores that evaluation takes a few seconds. Searching from those coefficients, with the iteration cap lifted, took 202.6 seconds in R and 276.3 seconds in Python. Both searches stopped successfully at log-likelihood -111545.0088160454.
 
@@ -88,4 +88,8 @@ python python/validation/run_gss.py --refit --threads 4
 
 ![GSS impulse responses](man/figures/gss_impulse_response.png)
 
-`validation/replicate_gss_exhibits.R` and `python/validation/replicate_gss_exhibits.py` write the coefficient table, persistence matrix, variance decomposition, and impulse responses to `validation/output/`. `notes/GSS_EXHIBITS.md` records the median and maximum absolute differences from the replication log.
+`validation/replicate_gss_exhibits.R` and `python/validation/replicate_gss_exhibits.py` write the coefficient table, persistence matrix, variance decomposition, and impulse responses to `validation/output/`. `notes/GSS_EXHIBITS.md` records that evaluation. How the comparison driver is built is in `notes/VALIDATION.md`. The likelihood and the reporting functions are described in `notes/DESIGN.md`.
+
+## Acknowledgments
+
+The C++/R/Python port, the documentation, and the deployment infrastructure were developed with Grok Bot and Cursor Cloud Agent.

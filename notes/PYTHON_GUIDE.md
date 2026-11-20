@@ -81,9 +81,12 @@ inverse. `summary(vcov_type=...)` selects the same covariance.
 
 ## GSS
 
-The replication sample is `validation/fortran/data/gss2.prn`. The shipped
-free coefficients, standard errors, and variance decomposition are in
-`validation/fortran/src/gss_log.txt`.
+The replication sample and the replication log are downloaded from the CC0
+Harvard Dataverse deposit doi:10.7910/DVN/DUCHYS into
+`validation/fortran/vendor/` (`data/gss2.prn` and `gss_log.txt`). The
+commands below download them when they are not already there. The free
+coefficients, standard errors, and variance decomposition are read from
+that log.
 
 ```bash
 python python/validation/run_gss.py --threads 4
@@ -100,8 +103,4 @@ outer-product standard errors, and it writes the coefficient table, the
 persistence matrix, the variance decomposition, the impulse responses, and
 `notes/GSS_EXHIBITS.md`. `--refit` starts BFGS from those coefficients and
 runs until the relative tolerance is met. Pass `--maxit` only to impose a
-cap.
-
-The published Fortran objective at the same coefficients is not that
-number. The package generator is Philox. The check above is the Philox
-figure.
+cap. The check above is the Philox figure.

@@ -265,7 +265,6 @@ int main(int argc, char** argv) {
     std::cout << "cpp_stable_same_draws " << stable.objective << "\n";
     std::cout << "cpp_stable_philox " << philox.objective << "\n";
     std::cout << "max_abs_person_shared " << max_abs_person << "\n";
-    std::cout << "published_target " << -111389.88 << "\n";
     print_frequencies(dump);
     return 0;
   } catch (const std::exception& error) {

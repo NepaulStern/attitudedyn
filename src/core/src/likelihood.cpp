@@ -580,8 +580,7 @@ Evaluation evaluate_impl(const Problem& problem, const std::vector<double>& thet
   }
   if (n_grad > 0 && request.numerics != Numerics::kStable) {
     throw std::invalid_argument(
-        "Analytic gradients are available for numerics = \"stable\" only. "
-        "The Fortran tail blend is not differentiable at its knots.");
+        "Analytic gradients are available for numerics = \"stable\" only.");
   }
   if (n_grad > 0 && !unpacked.identity_correlation) {
     throw std::invalid_argument(

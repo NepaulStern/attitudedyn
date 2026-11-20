@@ -13,6 +13,7 @@ attitudedyn-Ex.*
 *.tar.gz
 validation/fortran/build/
 validation/fortran/run/
+validation/fortran/vendor/
 validation/output/
 *.o
 *.so

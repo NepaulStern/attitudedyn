@@ -29,10 +29,10 @@
 #'   negative numerical Hessian of the analytic gradient. `"sandwich"` is
 #'   that inverse, times the uncentred outer product of the scores, times
 #'   the inverse. `"none"` skips it.
-#' @param numerics `"stable"` uses a double-precision log of a normal
-#'   interval probability. `"shared"` reproduces the original tail blend so
-#'   that a comparison with the Fortran oracle is not mixed up with that
-#'   change. Gradients require `"stable"`.
+#' @param numerics `"stable"`, the default, uses a double-precision log of a
+#'   normal interval probability and supplies analytic gradients. `"shared"`
+#'   reproduces the original program's normal-probability routine for
+#'   comparisons.
 #' @param fortran_ghk Use the original within-wave conditioning when the
 #'   contemporaneous correlation is not the identity. With an identity
 #'   correlation the two conditionings agree.

@@ -12,10 +12,10 @@ and does not start the optimiser. ``--refit`` continues from those values.
 Category counts are checked against the replication log before the
 likelihood is called.
 
-The coefficient vector and the variance decomposition are read from
-``validation/fortran/src/gss_log.txt`` (the replication log). That log is
-the file the R script compares against; the repository does not ship a
-separate ``gss_coefficients.txt`` or ``gss_variance.txt``.
+The coefficient vector and the variance decomposition are read from the
+replication log. ``validation/fortran/fetch_vendor.py`` downloads that log
+and ``gss2.prn`` from the CC0 Harvard Dataverse deposit
+doi:10.7910/DVN/DUCHYS into ``validation/fortran/vendor/``.
 """
 
 from __future__ import annotations
@@ -36,7 +36,7 @@ from attitudedyn.gss import (
     TIME_GRID,
     category_counts,
     fortran_names,
-    gss_paths,
+    ensure_replication_files,
     natural_persistence,
     read_gss,
     read_gss_estimate_table,
@@ -116,7 +116,6 @@ def print_comparison(compared: dict[str, pd.DataFrame], loglik: float, convergen
     print(f"convergence {convergence}")
     print(f"elapsed_seconds {elapsed:.3f}")
     print(f"loglik {loglik:.16f}")
-    print("published_target -111389.88")
     print(f"coefficient_abs_diff_max {np.max(abs_diff):.6g}")
     print(f"coefficient_abs_diff_median {np.median(abs_diff):.6g}")
     print(f"se_abs_diff_max {np.nanmax(se_diff):.6g}")
@@ -161,7 +160,7 @@ def main() -> None:
     else:
         maxit = 0 if args.maxit is None else args.maxit
     root = repository_root()
-    data_path, log_path = gss_paths(root)
+    data_path, log_path = ensure_replication_files(root)
     panel = read_gss(data_path)
     counts = category_counts(panel)
     for name, expected in EXPECTED_COUNTS.items():
@@ -208,7 +207,6 @@ def main() -> None:
     print(f"loglik {result.loglik:.16f}")
     print(f"philox_reference {PHILOX_LOGLIK:.16f}")
     print(f"loglik_abs_diff {abs(result.loglik - PHILOX_LOGLIK):.3e}")
-    print("published_target -111389.88")
     print(f"elapsed_seconds {elapsed:.3f}")
     persistence = result.persistence_matrix()
     variance = result.variance_decomposition()

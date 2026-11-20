@@ -10,8 +10,8 @@
 # of optimising it again.
 #
 # Tables and gss_impulse_response.png go to validation/output/. The figure
-# is also copied to man/figures/ for the README. notes/GSS_EXHIBITS.md is
-# the median and maximum absolute difference against the replication log.
+# is also copied to man/figures/ for the README. notes/GSS_EXHIBITS.md
+# records the evaluation.
 
 args <- commandArgs(trailingOnly = TRUE)
 fit_flag <- match("--fit", args)
@@ -57,7 +57,8 @@ fit_at_coefficients <- function(panel, coefficients, threads) {
 
 out_dir <- file.path(root, "validation", "output")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
-log_path <- file.path(root, "validation/fortran/src/gss_log.txt")
+paths <- ensure_replication_files(root)
+log_path <- paths$log
 point <- "replication estimates (the X vector printed before iteration 8)"
 started <- proc.time()
 if (!is.na(fit_flag)) {
@@ -69,8 +70,7 @@ if (!is.na(fit_flag)) {
   fit <- attitudedyn:::ensure_problem(fit)
   point <- paste0("saved fit in ", basename(fit_path))
 } else {
-  data_path <- file.path(root, "validation/fortran/data/gss2.prn")
-  panel <- read_gss(data_path)
+  panel <- read_gss(paths$data)
   counts <- gss_category_counts(panel)
   expected <- gss_frequencies()
   for (name in names(expected)) {
@@ -196,38 +196,24 @@ abs_var <- abs(comparison$variance$difference)
 abs_irf <- abs(irf_table$difference)
 finite_median <- function(x) stats::median(x[is.finite(x)])
 finite_max <- function(x) max(x[is.finite(x)])
-quantities <- list(
-  Coefficients = abs_coef,
-  `Standard errors` = abs_se,
-  `Persistence matrix` = abs_rho,
-  `Variance decomposition` = abs_var,
-  `Impulse responses` = abs_irf
-)
-table_rows <- vapply(names(quantities), function(label) {
-  sprintf("| %s | %.6g | %.6g |", label, finite_median(quantities[[label]]), finite_max(quantities[[label]]))
-}, character(1))
 note <- c(
   "# GSS exhibits",
   "",
-  "The tables compare this package with the replication log",
-  paste0("`validation/fortran/src/gss_log.txt`. The point is the ", point, "."),
-  "Draws are Philox, seed 1, with 10 antithetic pairs. Standard errors are",
-  "the centred outer product of the person scores. The persistence matrix",
+  paste0("Evaluation at the ", point, "."),
+  "Draws are Philox, seed 1, with 10 antithetic pairs. The persistence matrix",
   "is on (-1, 1), and the impulse responses are its powers.",
-  "",
-  "| Quantity | Median absolute difference | Maximum absolute difference |",
-  "| --- | ---: | ---: |",
-  table_rows,
   "",
   sprintf(
     "Log-likelihood %.10f. People in the likelihood: %d. Free coefficients: %d.",
     comparison$loglik, fit$n_persons, length(coef(fit))
   ),
-  sprintf(
-    "Spectral radius %.6f (replication coefficients %.6f).",
-    fitted_irf$spectral_radius, published_irf$spectral_radius
-  ),
+  sprintf("Spectral radius %.6f.", fitted_irf$spectral_radius),
   sprintf("Threads: %d. Elapsed: %.1f seconds.", threads, elapsed),
+  "",
+  "Regenerate with `Rscript validation/replicate_gss_exhibits.R` or",
+  "`python python/validation/replicate_gss_exhibits.py`.",
+  "The General Social Survey file comes from the CC0 Harvard Dataverse deposit",
+  "doi:10.7910/DVN/DUCHYS and is downloaded into `validation/fortran/vendor/`.",
   ""
 )
 writeLines(note, file.path(root, "notes", "GSS_EXHIBITS.md"))

@@ -31,9 +31,9 @@ root <- if (file.exists("validation/gss_data.R")) {
   getwd()
 }
 source(file.path(root, "validation/gss_data.R"))
-
-data_path <- file.path(root, "validation/fortran/data/gss2.prn")
-log_path <- file.path(root, "validation/fortran/src/gss_log.txt")
+paths <- ensure_replication_files(root)
+data_path <- paths$data
+log_path <- paths$log
 panel <- read_gss(data_path)
 counts <- gss_category_counts(panel)
 expected <- gss_frequencies()
@@ -88,7 +88,6 @@ elapsed <- (proc.time() - started)[["elapsed"]]
 cat(sprintf("free_coefficients %d\n", length(coef(fit))))
 cat(sprintf("persons %d\n", fit$n_persons))
 cat(sprintf("loglik %.16f\n", fit$loglik))
-cat(sprintf("published_target %.2f\n", -111389.88))
 cat(sprintf("elapsed_seconds %.3f\n", elapsed))
 if (refit) {
   out_dir <- file.path(root, "validation", "output")

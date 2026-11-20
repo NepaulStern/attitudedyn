@@ -24,6 +24,13 @@ from attitudedyn.gss import (
 
 ROOT = repository_root()
 DATA, LOG = gss_paths(ROOT)
+pytestmark = pytest.mark.skipif(
+    not (DATA.is_file() and LOG.is_file()),
+    reason=(
+        "GSS files are downloaded into validation/fortran/vendor by "
+        "validation/fortran/fetch_vendor.py; pytest does not require them."
+    ),
+)
 
 
 @pytest.fixture(scope="module")

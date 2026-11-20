@@ -71,11 +71,11 @@ Estimation uses a long file: one row is one person in one wave.
 | covariates | Numeric. A row with a missing covariate is dropped only if you set `na.action = na.omit`. Missing Likert answers stay in the file. |
 | `weight` | Optional. Zero or positive, and the same for every wave of a person. The sample log-likelihood adds up the person contributions with these weights. |
 
-A checkout of this repository reads the replication file with the helper below. Run it from the source directory. The helper returns the columns the model uses.
+The General Social Survey extract in this guide comes from the replication deposit on Harvard Dataverse (doi:10.7910/DVN/DUCHYS), dedicated to the public domain under CC0 1.0. A checkout downloads it with `python3 validation/fortran/fetch_vendor.py`. The helper below reads that file from the source directory and returns the columns the model uses.
 
 ```{r, eval = FALSE}
 source("validation/gss_data.R")
-panel <- read_gss("validation/fortran/data/gss2.prn")
+panel <- read_gss("validation/fortran/vendor/data/gss2.prn")
 ```
 
 The Likert items are `ideology` (7 categories), `military` (3), `welfare` (3), `immigrants` (5), `party` (7), and `environment` (3). Party is stored as 0 through 6 in the text file. The helper adds 1, so the model sees 1 through 7. The covariates are an intercept, `age`, `hs`, `college`, `adv`, `female`, `white`, `black`, `inc_mid`, and `inc_high`.
@@ -172,8 +172,8 @@ The call below reads the replication file, starts from the replication estimates
 
 ```{r, eval = FALSE}
 source("validation/gss_data.R")
-panel <- read_gss("validation/fortran/data/gss2.prn")
-estimates <- read_gss_estimates("validation/fortran/src/gss_log.txt")
+panel <- read_gss("validation/fortran/vendor/data/gss2.prn")
+estimates <- read_gss_estimates("validation/fortran/vendor/gss_log.txt")
 fit <- attitudedyn(
   cbind(ideology, military, welfare, immigrants, party, environment) ~
     0 + `(Intercept)` + age + hs + college + adv + female + white + black +

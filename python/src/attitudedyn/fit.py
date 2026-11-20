@@ -138,9 +138,10 @@ def fit(
         ``"sandwich"`` is that inverse, times the uncentred outer product
         of the scores, times the inverse. ``"none"`` skips it.
     numerics :
-        ``"stable"`` uses a double-precision log of a normal interval
-        probability and is required for the gradient. ``"shared"`` uses the
-        replication program's tail blend and does not return a gradient.
+        ``"stable"``, the default, uses a double-precision log of a normal
+        interval probability and supplies analytic gradients. ``"shared"``
+        reproduces the original program's normal-probability routine for
+        comparisons.
     fortran_ghk :
         Use the original within-wave conditioning when the contemporaneous
         correlation is not the identity. With an identity correlation the

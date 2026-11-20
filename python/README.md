@@ -49,7 +49,7 @@ result.impulse_response(horizon=4).to_dataframe()
 
 `summary()` is the text table. `to_dataframe()` is one row per free coefficient, with the standard error, z statistic, and p-value. `persistence_matrix()` is on (-1, 1): the row receives the carry-over from the earlier attitude in the column. `variance_decomposition()` reports four pieces of each latent attitude. `covariate` is the part from the covariates and the wave shifts together, `wave_effect` is the wave shift on its own, `factor` is the person-specific factor, and `shock` is the part from the random shocks carried forward by persistence. `impulse_response()` traces a one-time shock. Horizon 0 is the moment of the shock.
 
-The General Social Survey walkthrough, with the output of that call, is [`docs/user_guide.md`](docs/user_guide.md). Run it from a checkout so `validation/fortran/data/gss2.prn` resolves. `maxit=0` evaluates `start` and does not search.
+The General Social Survey walkthrough, with the output of that call, is [`docs/user_guide.md`](docs/user_guide.md). The survey file comes from the replication deposit on Harvard Dataverse (doi:10.7910/DVN/DUCHYS), dedicated to the public domain under CC0 1.0. From a checkout, `python3 validation/fortran/fetch_vendor.py` downloads it into `validation/fortran/vendor/data/gss2.prn`. `maxit=0` evaluates `start` and does not search.
 
 You can pass column lists instead of a formula. The formula helper accepts `cbind(...)` and bare column names, including `` 0 + `(Intercept)` `` when the data already contain a column of ones.
 
@@ -58,3 +58,7 @@ You can pass column lists instead of a formula. The formula helper accepts `cbin
 The default search is BFGS, the same steps `stats::optim(method = "BFGS")` uses in the R package. L-BFGS-B uses SciPy. Both use the slope of the likelihood. A trial step that is not finite, or that would make a threshold increment overflow, is handed back to the search as a large finite penalty with a zero slope, so the search rejects it.
 
 The GSS check is `python/validation/run_gss.py`. Notes on the source layout are in `notes/PYTHON_GUIDE.md`.
+
+## Acknowledgments
+
+The C++/R/Python port, the documentation, and the deployment infrastructure were developed with Grok Bot and Cursor Cloud Agent.

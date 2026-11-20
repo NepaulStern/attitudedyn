@@ -7,6 +7,33 @@
 # age is at least 16: age_k = age_j + 2 * (k - j), with k and j the wave
 # indices 1..8.
 
+# Download gss2.prn, the replication log, and the Fortran comparison sources
+# from the CC0 Harvard Dataverse deposit doi:10.7910/DVN/DUCHYS into
+# validation/fortran/vendor/, which is git-ignored.
+ensure_replication_files <- function(root) {
+  vendor <- file.path(root, "validation", "fortran", "vendor")
+  needed <- c(
+    file.path(vendor, "data", "gss2.prn"),
+    file.path(vendor, "gss_log.txt"),
+    file.path(vendor, "alecia_parallel.f"),
+    file.path(vendor, "eigrs.f"),
+    file.path(vendor, "opt.f")
+  )
+  script <- file.path(root, "validation", "fortran", "fetch_vendor.py")
+  status <- system2("python3", script)
+  if (!identical(status, 0L) || any(!file.exists(needed))) {
+    stop(
+      "Could not download the replication files from Harvard Dataverse (doi:10.7910/DVN/DUCHYS).",
+      call. = FALSE
+    )
+  }
+  list(
+    data = file.path(vendor, "data", "gss2.prn"),
+    log = file.path(vendor, "gss_log.txt"),
+    vendor = vendor
+  )
+}
+
 gss_nseg <- function() c(7L, 3L, 3L, 5L, 7L, 3L)
 
 gss_time_grid <- function() c(2, 3, 4, 5, 6, 7, 8, 10)
@@ -377,7 +404,6 @@ print_gss_comparison <- function(comparison, elapsed = NA_real_) {
   cat(sprintf("convergence %d\n", comparison$convergence))
   cat(sprintf("elapsed_seconds %.3f\n", elapsed))
   cat(sprintf("loglik %.16f\n", comparison$loglik))
-  cat(sprintf("published_target %.2f\n", -111389.88))
   cat(sprintf("coefficient_abs_diff_max %.6g\n", max(abs_diff)))
   cat(sprintf("coefficient_abs_diff_median %.6g\n", stats::median(abs_diff)))
   cat(sprintf("se_abs_diff_max %.6g\n", max(se_diff, na.rm = TRUE)))

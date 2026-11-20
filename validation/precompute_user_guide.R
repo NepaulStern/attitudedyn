@@ -14,9 +14,10 @@ root <- if (file.exists("validation/gss_data.R")) {
 source(file.path(root, "validation/gss_data.R"))
 out <- file.path(root, "inst/extdata")
 dir.create(out, recursive = TRUE, showWarnings = FALSE)
+paths <- ensure_replication_files(root)
 
-panel <- read_gss(file.path(root, "validation/fortran/data/gss2.prn"))
-estimates <- read_gss_estimates(file.path(root, "validation/fortran/src/gss_log.txt"))
+panel <- read_gss(paths$data)
+estimates <- read_gss_estimates(paths$log)
 counts <- gss_category_counts(panel)
 stopifnot(identical(lapply(counts, as.integer), gss_frequencies()))
 

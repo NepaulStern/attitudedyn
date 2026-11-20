@@ -12,8 +12,7 @@ by ``run_gss.py --refit`` instead of optimising it again.
 
 Tables and ``gss_impulse_response.png`` go to ``validation/output/``. The
 figure is also copied to ``man/figures/`` for the README.
-``notes/GSS_EXHIBITS.md`` is the median and maximum absolute difference
-against the replication log.
+``notes/GSS_EXHIBITS.md`` records the evaluation.
 """
 
 from __future__ import annotations
@@ -39,7 +38,7 @@ from attitudedyn.gss import (
     TIME_GRID,
     category_counts,
     fortran_names,
-    gss_paths,
+    ensure_replication_files,
     natural_persistence,
     read_gss,
     read_gss_estimate_table,
@@ -194,48 +193,25 @@ def exhibit_frames(result, log_path: Path) -> dict:
 
 def comparison_markdown(frames: dict, *, loglik: float, n_persons: int, n_parameters: int,
                         elapsed: float, threads: int, point: str) -> str:
-    """Short table of median and maximum absolute differences."""
-    coefficient_gap = np.abs(frames["coefficients"]["difference"].to_numpy())
-    error_gap = np.abs(frames["coefficients"]["se_difference"].to_numpy())
-    persistence_gap = np.abs(
-        frames["persistence"].drop(columns="attitude").to_numpy()
-        - frames["published_persistence"].drop(columns="attitude").to_numpy()
-    )
-    variance_gap = np.abs(frames["variance"]["difference"].to_numpy())
-    impulse_gap = np.abs(frames["impulse"]["difference"].to_numpy())
-    rows = [
-        ("Coefficients", coefficient_gap),
-        ("Standard errors", error_gap),
-        ("Persistence matrix", persistence_gap),
-        ("Variance decomposition", variance_gap),
-        ("Impulse responses", impulse_gap),
-    ]
+    """Record of the GSS evaluation written to notes/GSS_EXHIBITS.md."""
     body = [
         "# GSS exhibits",
         "",
-        "The tables compare this package with the replication log",
-        "`validation/fortran/src/gss_log.txt`. The point is the " + point + ".",
-        "Draws are Philox, seed 1, with 10 antithetic pairs. Standard errors are",
-        "the centred outer product of the person scores. The persistence matrix",
+        f"Evaluation at the {point}.",
+        "Draws are Philox, seed 1, with 10 antithetic pairs. The persistence matrix",
         "is on (-1, 1), and the impulse responses are its powers.",
         "",
-        "| Quantity | Median absolute difference | Maximum absolute difference |",
-        "| --- | ---: | ---: |",
+        f"Log-likelihood {loglik:.10f}. People in the likelihood: {n_persons}. "
+        f"Free coefficients: {n_parameters}.",
+        f"Spectral radius {frames['spectral_radius']:.6f}.",
+        f"Threads: {threads}. Elapsed: {elapsed:.1f} seconds.",
+        "",
+        "Regenerate with `Rscript validation/replicate_gss_exhibits.R` or",
+        "`python python/validation/replicate_gss_exhibits.py`.",
+        "The General Social Survey file comes from the CC0 Harvard Dataverse deposit",
+        "doi:10.7910/DVN/DUCHYS and is downloaded into `validation/fortran/vendor/`.",
+        "",
     ]
-    for label, gap in rows:
-        finite = gap[np.isfinite(gap)]
-        body.append(f"| {label} | {np.median(finite):.6g} | {np.max(finite):.6g} |")
-    body.extend(
-        [
-            "",
-            f"Log-likelihood {loglik:.10f}. People in the likelihood: {n_persons}. "
-            f"Free coefficients: {n_parameters}.",
-            f"Spectral radius {frames['spectral_radius']:.6f} "
-            f"(replication coefficients {frames['published_spectral_radius']:.6f}).",
-            f"Threads: {threads}. Elapsed: {elapsed:.1f} seconds.",
-            "",
-        ]
-    )
     return "\n".join(body)
 
 
@@ -321,7 +297,7 @@ def main() -> None:
     )
     args = parser.parse_args()
     root = repository_root()
-    data_path, log_path = gss_paths(root)
+    data_path, log_path = ensure_replication_files(root)
     panel = read_gss(data_path)
     counts = category_counts(panel)
     for name, expected in EXPECTED_COUNTS.items():
