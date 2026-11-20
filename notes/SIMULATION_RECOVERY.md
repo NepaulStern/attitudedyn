@@ -158,3 +158,78 @@ Covered coefficients out of 80 replications:
 | `loading[y2,f1]` | 70 | 70 | 73 | 61 | 66 | 68 | 46 | 52 | 61 |
 | `threshold[y1,3]` | 75 | 76 | 78 | 76 | 75 | 75 | 72 | 72 | 71 |
 | `threshold[y2,3]` | 75 | 76 | 76 | 73 | 73 | 73 | 75 | 76 | 75 |
+
+# Antithetic draws at 1,600 people
+
+The covariance-type design above, at 1,600 people, with the antithetic draw count set to 10, 50, and 100. Eighty replications at each count. Every replication converged (optimiser code 0). No covariance was singular and no warning was recorded. The run used 4 threads and took 3125.1 seconds (194.1, 997.3, and 1933.7 seconds).
+
+Estimation is BFGS with the analytic gradient, relative tolerance `1e-8`, at most 50 iterations, started at the data-generating coefficients. Draws are Philox, estimation seed 1. Replication `r` uses data seed `1000 + r` for `r = 0, ..., 79`. A 95 percent Wald interval uses `1.959963984540054` standard errors. Coverage counts free coefficients whose interval contains the data-generating value, out of 960 (`80 * 12`). Bias is the mean of the estimate minus the data-generating value, pooled over coefficients and replications in the summary and computed within each coefficient below. RMSE is the square root of the mean squared error on the same pooling.
+
+## Summary
+
+| Draws | Seconds | Bias | RMSE | opg_centered | hessian | sandwich |
+| ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 10 | 194.1 | 0.000295 | 0.051268 | 824/960 = 0.858333 | 838/960 = 0.872917 | 861/960 = 0.896875 |
+| 50 | 997.3 | 0.001270 | 0.041987 | 906/960 = 0.943750 | 907/960 = 0.944792 | 911/960 = 0.948958 |
+| 100 | 1933.7 | 0.001731 | 0.041133 | 912/960 = 0.950000 | 912/960 = 0.950000 | 909/960 = 0.946875 |
+
+## Recommendation
+
+Fifty antithetic draws puts coverage of the three covariances between 0.943750 and 0.948958, and the RMSE at 0.041987. One hundred draws puts coverage between 0.946875 and 0.950000, and the RMSE at 0.041133. Those 80 replications take 1933.7 seconds at 100 draws and 997.3 seconds at 50. For a new sample, pass 50 antithetic draws. The GSS exhibit scripts, and the default of `attitudedyn()` and `attitudedyn.fit()`, remain 10 draws and seed 1.
+
+## 10 antithetic draws
+
+Covered coefficients out of 80 replications.
+
+| Coefficient | Bias | RMSE | opg_centered | hessian | sandwich |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `beta[y1,(Intercept)]` | -0.0088 | 0.0208 | 73 | 73 | 75 |
+| `beta[y1,x]` | -0.0064 | 0.0201 | 74 | 74 | 75 |
+| `beta[y2,(Intercept)]` | -0.0086 | 0.0197 | 75 | 75 | 75 |
+| `beta[y2,x]` | -0.0052 | 0.0212 | 74 | 74 | 73 |
+| `persistence[y1,y1]` | 0.0374 | 0.0764 | 74 | 76 | 76 |
+| `persistence[y1,y2]` | 0.0449 | 0.0637 | 62 | 63 | 66 |
+| `persistence[y2,y1]` | 0.0543 | 0.0697 | 61 | 61 | 65 |
+| `persistence[y2,y2]` | 0.0223 | 0.0696 | 74 | 76 | 76 |
+| `loading[y1,f1]` | -0.0513 | 0.0663 | 49 | 54 | 63 |
+| `loading[y2,f1]` | -0.0453 | 0.0631 | 59 | 62 | 67 |
+| `threshold[y1,3]` | -0.0133 | 0.0305 | 73 | 74 | 73 |
+| `threshold[y2,3]` | -0.0163 | 0.0312 | 76 | 76 | 77 |
+
+## 50 antithetic draws
+
+Covered coefficients out of 80 replications.
+
+| Coefficient | Bias | RMSE | opg_centered | hessian | sandwich |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `beta[y1,(Intercept)]` | -0.0011 | 0.0195 | 76 | 76 | 77 |
+| `beta[y1,x]` | 0.0015 | 0.0191 | 77 | 76 | 77 |
+| `beta[y2,(Intercept)]` | -0.0020 | 0.0183 | 74 | 74 | 75 |
+| `beta[y2,x]` | 0.0016 | 0.0208 | 75 | 75 | 75 |
+| `persistence[y1,y1]` | 0.0109 | 0.0724 | 73 | 74 | 74 |
+| `persistence[y1,y2]` | 0.0098 | 0.0458 | 75 | 75 | 75 |
+| `persistence[y2,y1]` | 0.0153 | 0.0454 | 76 | 76 | 76 |
+| `persistence[y2,y2]` | 0.0084 | 0.0699 | 78 | 79 | 79 |
+| `loading[y1,f1]` | -0.0113 | 0.0436 | 75 | 75 | 76 |
+| `loading[y2,f1]` | -0.0132 | 0.0437 | 74 | 74 | 74 |
+| `threshold[y1,3]` | 0.0002 | 0.0276 | 77 | 77 | 77 |
+| `threshold[y2,3]` | -0.0048 | 0.0279 | 76 | 76 | 76 |
+
+## 100 antithetic draws
+
+Covered coefficients out of 80 replications.
+
+| Coefficient | Bias | RMSE | opg_centered | hessian | sandwich |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `beta[y1,(Intercept)]` | -0.0003 | 0.0195 | 77 | 77 | 77 |
+| `beta[y1,x]` | 0.0025 | 0.0195 | 75 | 75 | 75 |
+| `beta[y2,(Intercept)]` | -0.0012 | 0.0184 | 74 | 74 | 74 |
+| `beta[y2,x]` | 0.0026 | 0.0210 | 75 | 75 | 74 |
+| `persistence[y1,y1]` | 0.0087 | 0.0705 | 75 | 75 | 75 |
+| `persistence[y1,y2]` | 0.0057 | 0.0456 | 73 | 74 | 74 |
+| `persistence[y2,y1]` | 0.0108 | 0.0444 | 75 | 75 | 75 |
+| `persistence[y2,y2]` | 0.0069 | 0.0684 | 80 | 80 | 80 |
+| `loading[y1,f1]` | -0.0056 | 0.0420 | 79 | 79 | 78 |
+| `loading[y2,f1]` | -0.0078 | 0.0421 | 75 | 74 | 74 |
+| `threshold[y1,3]` | 0.0017 | 0.0275 | 78 | 78 | 77 |
+| `threshold[y2,3]` | -0.0034 | 0.0278 | 76 | 76 | 76 |
