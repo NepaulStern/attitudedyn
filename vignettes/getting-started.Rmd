@@ -1,0 +1,44 @@
+---
+title: "Getting started with attitudedyn"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with attitudedyn}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+`attitudedyn` fits a panel of ordinal attitudes by simulated maximum likelihood, following the Nepaul and Stern (2026) replication package. Several Likert items measured on the same people over several waves share a persistence matrix and a small number of person factors. The whole latent attitude carries forward from one wave to the next.
+
+```{r}
+library(attitudedyn)
+panel <- simulate_attitudes(n_persons = 40, n_waves = 3, n_factors = 1, seed = 1)
+head(panel)
+```
+
+The data are in long form: one row is one person in one wave. Outcomes are integers `1, ..., K`. The cut between category 1 and category 2 is normalised at zero, so that numbering is part of the model.
+
+```{r}
+fit <- attitudedyn(
+  cbind(y1, y2) ~ x,
+  data = panel,
+  id = ~ id,
+  wave = ~ wave,
+  time = ~ time,
+  n_factors = 1,
+  draws = 6,
+  control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+)
+summary(fit)
+```
+
+`coef()` returns the unconstrained coefficients that the optimiser sees. Persistence coefficients are transformed to the interval (-1, 1) inside the likelihood. `persistence_matrix()` reports that scale: the row is the attitude that receives the lag, and the column is the attitude that is lagged.
+
+```{r}
+persistence_matrix(fit)
+variance_decomposition(fit)
+impulse_response(fit, horizon = 3)$response[, "y1", "y1"]
+```

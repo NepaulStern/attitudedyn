@@ -156,8 +156,7 @@ double sample_variance(const std::vector<double>& values) {
 
 }  // namespace
 
-VarianceComponent variance_decomposition(const Problem& problem, const std::vector<double>& theta_full,
-                                         Dynamics dynamics) {
+VarianceComponent variance_decomposition(const Problem& problem, const std::vector<double>& theta_full) {
   const std::vector<int> no_gradient(theta_full.size(), -1);
   const detail::Unpacked unpacked = detail::unpack(problem.spec, theta_full, no_gradient);
   const int J = problem.spec.n_attitudes;
@@ -198,9 +197,7 @@ VarianceComponent variance_decomposition(const Problem& problem, const std::vect
   }
   const InfluenceShares shares = influence_shares(unpacked.rho, J);
   if (!shares.stationary) {
-    out.note = (dynamics == Dynamics::kLatentAttitude)
-                   ? "The persistence matrix is not stationary, so the long-run shock variance is not finite."
-                   : "The shock persistence matrix is not stationary, so the long-run shock variance is not finite.";
+    out.note = "The persistence matrix is not stationary, so the long-run shock variance is not finite.";
   } else {
     out.shock = shares.long_run_variance;
     out.note = "Shock variance is the long-run variance of the recursion state = R * state_lag + innovation, "
@@ -213,23 +210,8 @@ VarianceComponent variance_decomposition(const Problem& problem, const std::vect
   return out;
 }
 
-VarianceComponent variance_decomposition_fortran(const Problem& problem,
-                                                  const std::vector<double>& theta_full) {
-  // The Fortran vardecomp routine double-counts the wave effect and accumulates
-  // products of single persistence entries rather than matrix powers. A
-  // line-by-line port is still worth having for the GSS log, but only after it
-  // has been checked against that log. Until then this entry point refuses, so
-  // a caller cannot mistake an unaudited number for the published table.
-  (void)problem;
-  (void)theta_full;
-  throw std::logic_error(
-      "variance_decomposition_fortran is not enabled yet. Use variance_decomposition(), "
-      "which splits covariate, wave, factor and long-run shock variance without "
-      "the Fortran double count.");
-}
-
 SimulatedPanel simulate_panel(const ModelSpec& spec, const std::vector<double>& theta_full,
-                              int n_persons, Dynamics dynamics, std::uint64_t seed) {
+                              int n_persons, std::uint64_t seed) {
   if (n_persons < 1) throw std::invalid_argument("Simulate at least one person.");
   const std::vector<int> no_gradient(theta_full.size(), -1);
   const detail::Unpacked unpacked = detail::unpack(spec, theta_full, no_gradient);
@@ -245,7 +227,6 @@ SimulatedPanel simulate_panel(const ModelSpec& spec, const std::vector<double>& 
   panel.covariates.resize(static_cast<std::size_t>(rows) * spec.n_covariates);
   panel.outcome.resize(static_cast<std::size_t>(rows) * spec.n_attitudes);
 
-  const bool latent = dynamics == Dynamics::kLatentAttitude;
   const int J = spec.n_attitudes;
   for (int person = 0; person < n_persons; ++person) {
     std::vector<double> factors(static_cast<std::size_t>(spec.n_factors));
@@ -296,7 +277,7 @@ SimulatedPanel simulate_panel(const ModelSpec& spec, const std::vector<double>& 
             detail::standard_normal_draw(seed ^ 0xA5A5A5A5A5A5A5A5ull, person, 1, stream, false,
                                          DrawKind::kPhilox);
         const double ystar = xb + factor_mean + lagged + innovation;
-        next[attitude] = latent ? ystar : lagged + innovation;
+        next[attitude] = ystar;
         int category = spec.n_categories[attitude];
         for (int k = 1; k <= spec.n_categories[attitude]; ++k) {
           if (ystar <= unpacked.threshold[attitude * unpacked.max_cuts + k]) {
@@ -313,7 +294,7 @@ SimulatedPanel simulate_panel(const ModelSpec& spec, const std::vector<double>& 
 }
 
 Prediction predict_probabilities(const Problem& problem, const std::vector<double>& theta_full,
-                                 Dynamics dynamics, int n_draws, std::uint64_t seed, int n_threads) {
+                                 int n_draws, std::uint64_t seed, int n_threads) {
   if (n_draws < 1) throw std::invalid_argument("Prediction needs at least one draw.");
   if (n_threads < 1) throw std::invalid_argument("n_threads must be at least 1.");
   (void)n_threads;  // the likelihood is the threaded hot path; prediction is a post-step
@@ -332,7 +313,6 @@ Prediction predict_probabilities(const Problem& problem, const std::vector<doubl
   out.max_categories = Kmax;
   out.probability.assign(static_cast<std::size_t>(n_persons) * T * J * Kmax, 0.0);
   out.mean_latent.assign(static_cast<std::size_t>(n_persons) * T * J, 0.0);
-  const bool latent = dynamics == Dynamics::kLatentAttitude;
   const double inv = 1.0 / static_cast<double>(n_draws);
 
   for (int person_index = 0; person_index < n_persons; ++person_index) {
@@ -363,11 +343,9 @@ Prediction predict_probabilities(const Problem& problem, const std::vector<doubl
           if (problem.spec.include_wave_effects) {
             xb += unpacked.wave_effect[attitude * T + wave];
           }
-          if (person.interviewed[wave]) {
-            const double* x = person.covariates.data() + static_cast<std::size_t>(wave) * unpacked.n_covariates;
-            for (int column = 0; column < unpacked.n_covariates; ++column) {
-              xb += unpacked.beta[attitude * unpacked.n_covariates + column] * x[column];
-            }
+          const double* x = person.covariates.data() + static_cast<std::size_t>(wave) * unpacked.n_covariates;
+          for (int column = 0; column < unpacked.n_covariates; ++column) {
+            xb += unpacked.beta[attitude * unpacked.n_covariates + column] * x[column];
           }
           double factor_mean = 0.0;
           for (int factor = 0; factor < problem.spec.n_factors; ++factor) {
@@ -377,7 +355,7 @@ Prediction predict_probabilities(const Problem& problem, const std::vector<doubl
           const int stream = problem.spec.n_factors + attitude * T + wave;
           const double innovation =
               detail::standard_normal_draw(seed, person_index, draw, stream, false, problem.draws.kind);
-          next[attitude] = (latent ? y_pre : lagged) + innovation;
+          next[attitude] = y_pre + innovation;
           const std::size_t latent_index =
               (static_cast<std::size_t>(person_index) * T + wave) * J + attitude;
           out.mean_latent[latent_index] += y_pre * inv;

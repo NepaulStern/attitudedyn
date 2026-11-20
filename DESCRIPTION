@@ -1,0 +1,33 @@
+Package: attitudedyn
+Title: Dynamic Discrete Choice Models for Ordinal Panel Attitudes
+Version: 0.1.0
+Authors@R: person("Gabriel", "Mihalache", email = "mihalache@gmail.com", role = c("aut", "cre"))
+Author: Gabriel Mihalache [aut, cre]
+Maintainer: Gabriel Mihalache <mihalache@gmail.com>
+Description: Estimates the dynamic ordered-probit model of Nepaul and Stern
+    (2026, Political Analysis) for several ordinal attitudes observed in an
+    unbalanced panel. The likelihood is a Geweke-Hajivassiliou-Keane
+    simulated likelihood with antithetic draws. A dependency-free C++ core
+    evaluates the likelihood and its analytic gradient; the R interface is a
+    thin wrapper. The latent attitude carries forward from wave to wave, as
+    in the authors' Fortran replication program.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Language: en-US
+Depends: R (>= 4.0)
+Imports:
+    Rcpp,
+    cli,
+    stats,
+    broom
+LinkingTo: Rcpp
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+Roxygen: list(markdown = TRUE)
+VignetteBuilder: knitr
+SystemRequirements: C++17
+URL: https://doi.org/10.1017/pan.2026.10034
+Config/roxygen2/version: 8.1.1

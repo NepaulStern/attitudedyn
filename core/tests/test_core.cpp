@@ -214,33 +214,6 @@ int main() {
   check(threaded_eval.objective == analytic.objective, "thread count does not change the loglik");
   check(threaded_eval.gradient == analytic.gradient, "thread count does not change the gradient");
 
-  // Shock-only dynamics is a different model once a covariate persists through
-  // the lag. The two objectives must not be forced equal.
-  EvaluateRequest shock_request;
-  shock_request.dynamics = Dynamics::kShockOnly;
-  shock_request.n_threads = 2;
-  const Evaluation shock_eval = evaluate_full(small_problem, small_problem.theta_full, shock_request);
-  check(std::isfinite(shock_eval.objective), "shock-only loglik is finite");
-  check(shock_eval.objective != analytic.objective, "shock-only differs from latent-attitude dynamics");
-  EvaluateRequest shock_gradient = gradient_request;
-  shock_gradient.dynamics = Dynamics::kShockOnly;
-  const Evaluation shock_analytic =
-      evaluate_full(small_problem, small_problem.theta_full, shock_gradient);
-  for (int column = 0; column < static_cast<int>(free_columns.size()); ++column) {
-    std::vector<double> up = small_problem.theta_full;
-    std::vector<double> down = small_problem.theta_full;
-    up[free_columns[column]] += step;
-    down[free_columns[column]] -= step;
-    EvaluateRequest value_only;
-    value_only.dynamics = Dynamics::kShockOnly;
-    const double plus = evaluate_full(small_problem, up, value_only).objective;
-    const double minus = evaluate_full(small_problem, down, value_only).objective;
-    const double numeric = (plus - minus) / (2.0 * step);
-    const double scale = std::max(1.0, std::fabs(shock_analytic.gradient[column]));
-    check(std::fabs(shock_analytic.gradient[column] - numeric) <= 2e-5 * scale,
-          "shock-only finite difference " + small_problem.layout.entries[free_columns[column]].name);
-  }
-
   const ImpulseResponse irf = impulse_response(
       natural_parameters(small_problem.spec, small_problem.theta_full).persistence, 2, 4);
   check(irf.response.size() == 5u * 4u, "irf length");

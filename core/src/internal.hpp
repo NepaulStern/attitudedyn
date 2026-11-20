@@ -52,8 +52,7 @@ Unpacked unpack(const ModelSpec& spec, const std::vector<double>& theta_full,
 double person_contribution(const ModelSpec& spec, const Unpacked& theta,
                            const Person& person, int person_index,
                            const DrawOptions& draws, const float* factor_draws,
-                           const float* shock_draws, Dynamics dynamics,
-                           Numerics numerics, bool fortran_ghk,
+                           const float* shock_draws, Numerics numerics, bool fortran_ghk,
                            double* gradient, double* score_if_wanted);
 
 }  // namespace detail

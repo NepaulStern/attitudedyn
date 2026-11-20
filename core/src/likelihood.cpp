@@ -55,9 +55,9 @@ double external_shock(const DrawSource& source, int n_attitudes, int attitude, i
 }
 
 void scaled_persistence(double rho, double drho_dc, double gap, double& rhop, double& d_rhop_dc) {
-  // sign(rho) * |rho|^gap, the factor in Nepaul & Stern equation (2) and in
-  // the Fortran preplik12. The derivative is with respect to the
-  // unconstrained coefficient c, with rho = 2e^c/(1+e^c)-1.
+  // sign(rho) * |rho|^gap, as in the Fortran preplik12. The derivative is
+  // with respect to the unconstrained coefficient c, with
+  // rho = 2e^c/(1+e^c)-1.
   if (rho == 0.0) {
     rhop = 0.0;
     d_rhop_dc = (gap == 1.0) ? drho_dc : 0.0;
@@ -75,12 +75,14 @@ double systematic_part(const Unpacked& theta, const Person& person, int attitude
   if (include_wave_effects) {
     value += theta.wave_effect[attitude * theta.n_waves + wave];
   }
-  if (person.interviewed[wave]) {
-    const double* x = person.covariates.data() + static_cast<std::size_t>(wave) * theta.n_covariates;
-    const double* beta = theta.beta.data() + static_cast<std::size_t>(attitude) * theta.n_covariates;
-    for (int column = 0; column < theta.n_covariates; ++column) {
-      value += beta[column] * x[column];
-    }
+  // preplik12 multiplies x beta on every wave in the person's window, including
+  // a gap. An unread wave is stored as a zero regressor, so it contributes only
+  // the wave effect. A wave that was read but has no usable outcome still
+  // contributes x beta.
+  const double* x = person.covariates.data() + static_cast<std::size_t>(wave) * theta.n_covariates;
+  const double* beta = theta.beta.data() + static_cast<std::size_t>(attitude) * theta.n_covariates;
+  for (int column = 0; column < theta.n_covariates; ++column) {
+    value += beta[column] * x[column];
   }
   return value;
 }
@@ -91,12 +93,10 @@ void add_systematic_derivative(const Unpacked& theta, const Person& person, int 
     const int slot = theta.wave_grad[attitude * theta.n_waves + wave];
     if (slot >= 0) dy[slot] += 1.0;
   }
-  if (person.interviewed[wave]) {
-    const double* x = person.covariates.data() + static_cast<std::size_t>(wave) * theta.n_covariates;
-    for (int column = 0; column < theta.n_covariates; ++column) {
-      const int slot = theta.beta_grad[attitude * theta.n_covariates + column];
-      if (slot >= 0) dy[slot] += x[column];
-    }
+  const double* x = person.covariates.data() + static_cast<std::size_t>(wave) * theta.n_covariates;
+  for (int column = 0; column < theta.n_covariates; ++column) {
+    const int slot = theta.beta_grad[attitude * theta.n_covariates + column];
+    if (slot >= 0) dy[slot] += x[column];
   }
 }
 
@@ -155,11 +155,10 @@ double log_probability(double lower_limit, double upper_limit, Numerics numerics
 // One GHK path. `gradient` has length n_grad when with_gradient is true and
 // receives the derivative of this path's log-likelihood only.
 double one_path(const ModelSpec& spec, const Unpacked& theta, const Person& person,
-                const DrawSource& source, Dynamics dynamics, Numerics numerics, bool with_gradient,
+                const DrawSource& source, Numerics numerics, bool with_gradient,
                 double* path_gradient) {
   const int J = theta.n_attitudes;
   const int G = theta.n_grad;
-  const bool latent = dynamics == Dynamics::kLatentAttitude;
   std::vector<double> factors(static_cast<std::size_t>(theta.n_factors));
   for (int factor = 0; factor < theta.n_factors; ++factor) factors[factor] = source.factor(factor);
 
@@ -181,10 +180,9 @@ double one_path(const ModelSpec& spec, const Unpacked& theta, const Person& pers
       const bool observed = person.interviewed[wave] && category >= 1 &&
                             category <= spec.n_categories[attitude];
 
-      // Lagged contribution. For the latent-attitude recursion this is R times
-      // the previous latent attitude (what likobs12 does). For the shock-only
-      // recursion it is R times the previous innovation, and x beta, the wave
-      // effect and the factor mean are added fresh at this wave.
+      // Lagged contribution: the persistence matrix times the previous latent
+      // attitude, as in likobs12. The covariate index, the wave effect and the
+      // factor are inside that latent attitude, so they carry forward too.
       double lagged = 0.0;
       if (with_gradient) std::fill(d_pre.begin(), d_pre.end(), 0.0);
       if (has_lag) {
@@ -227,41 +225,10 @@ double one_path(const ModelSpec& spec, const Unpacked& theta, const Person& pers
         // A missing item, or a wave the person skipped, is integrated by
         // simulating it forward. It does not contribute to the likelihood.
         // The shock is the untruncated normal draw (likobs12, the second branch).
-        state_new = (latent ? y_pre : lagged) + raw;
+        state_new = y_pre + raw;
         if (with_gradient) {
           double* dest = dstate_cur.data() + static_cast<std::size_t>(attitude) * G;
-          if (latent) {
-            std::copy(d_pre.begin(), d_pre.end(), dest);
-          } else if (has_lag) {
-            // The missing-wave shock does not depend on parameters, so the
-            // new shock state carries only the lagged shock's derivative.
-            for (int column = 0; column < G; ++column) {
-              // d_pre currently holds d(lag) + d(xb) + d(loading). The shock
-              // state does not include xb or the loading except through the
-              // lag, which is the part of d_pre that came from the lag.
-              // Rebuild that part: dest = d(lagged) = d_pre - d(xb) - d(loading).
-              dest[column] = d_pre[column];
-            }
-            // Subtract the systematic and loading derivatives we just added.
-            if (spec.include_wave_effects) {
-              const int slot = theta.wave_grad[attitude * theta.n_waves + wave];
-              if (slot >= 0) dest[slot] -= 1.0;
-            }
-            if (person.interviewed[wave]) {
-              const double* x =
-                  person.covariates.data() + static_cast<std::size_t>(wave) * theta.n_covariates;
-              for (int column = 0; column < theta.n_covariates; ++column) {
-                const int slot = theta.beta_grad[attitude * theta.n_covariates + column];
-                if (slot >= 0) dest[slot] -= x[column];
-              }
-            }
-            for (int factor = 0; factor < theta.n_factors; ++factor) {
-              const int g = theta.loading_grad[factor * J + attitude];
-              if (g >= 0) dest[g] -= factors[factor];
-            }
-          } else {
-            std::fill(dest, dest + G, 0.0);
-          }
+          std::copy(d_pre.begin(), d_pre.end(), dest);
         }
       } else {
         const int base = attitude * theta.max_cuts;
@@ -275,7 +242,7 @@ double one_path(const ModelSpec& spec, const Unpacked& theta, const Person& pers
         path_loglik += log_probability(arg_lower, arg_upper, numerics);
 
         const Truncation draw = truncate_standard_normal(raw, arg_lower, arg_upper, numerics);
-        state_new = (latent ? y_pre : lagged) + draw.shock;
+        state_new = y_pre + draw.shock;
 
         if (with_gradient) {
           const double lp = log_probability(arg_lower, arg_upper, Numerics::kStable);
@@ -294,30 +261,7 @@ double one_path(const ModelSpec& spec, const Unpacked& theta, const Person& pers
 
           double* dest = dstate_cur.data() + static_cast<std::size_t>(attitude) * G;
           if (draw.clamped || !(draw.phi_shock > 0.0)) {
-            if (latent) {
-              std::copy(d_pre.begin(), d_pre.end(), dest);
-            } else {
-              std::fill(dest, dest + G, 0.0);
-              if (has_lag) {
-                for (int column = 0; column < G; ++column) dest[column] = d_pre[column];
-                if (spec.include_wave_effects) {
-                  const int slot = theta.wave_grad[attitude * theta.n_waves + wave];
-                  if (slot >= 0) dest[slot] -= 1.0;
-                }
-                if (person.interviewed[wave]) {
-                  const double* x = person.covariates.data() +
-                                    static_cast<std::size_t>(wave) * theta.n_covariates;
-                  for (int column = 0; column < theta.n_covariates; ++column) {
-                    const int slot = theta.beta_grad[attitude * theta.n_covariates + column];
-                    if (slot >= 0) dest[slot] -= x[column];
-                  }
-                }
-                for (int factor = 0; factor < theta.n_factors; ++factor) {
-                  const int g = theta.loading_grad[factor * J + attitude];
-                  if (g >= 0) dest[g] -= factors[factor];
-                }
-              }
-            }
+            std::copy(d_pre.begin(), d_pre.end(), dest);
           } else {
             // dutc/da = phi(limit) * (weight of that limit) / phi(utc).
             const double scale_lower =
@@ -330,44 +274,8 @@ double one_path(const ModelSpec& spec, const Unpacked& theta, const Person& pers
             std::fill(d_arg.begin(), d_arg.end(), 0.0);
             add_cut_derivative(theta, attitude, category - 1, scale_lower, d_arg.data());
             add_cut_derivative(theta, attitude, category, scale_upper, d_arg.data());
-            if (latent) {
-              for (int column = 0; column < G; ++column) {
-                dest[column] = d_pre[column] * (1.0 - scale_y) + d_arg[column];
-              }
-            } else {
-              // Shock state = lagged shock + utc. utc depends on y_pre, whose
-              // derivative is d_pre (lag, xb and loading). The lagged shock's
-              // own derivative is the lag part of d_pre.
-              for (int column = 0; column < G; ++column) {
-                dest[column] = d_pre[column] - scale_y * d_pre[column] + d_arg[column];
-              }
-              // Remove xb and loading from the "lagged shock" piece, which is
-              // the d_pre term that is not multiplied by -scale_y. The line
-              // above is (1 - scale_y) * d_pre + d_arg, and d_pre includes
-              // dxb. The shock state should include dxb only through utc, i.e.
-              // through -scale_y * dxb, not through the level of the lag.
-              // Adding back scale_y * dxb and subtracting dxb leaves -scale_y * dxb.
-              // Equivalently subtract (1) * dxb from dest... wait:
-              // We want: d(lag) + d(utc), d(utc) = -scale_y * d(y_pre) + d_arg
-              // d(y_pre) = d(lag) + d(xb) + d(loading)
-              // so total = d(lag) - scale_y * d(y_pre) + d_arg
-              //         = (1 - scale_y) * d(y_pre) - d(xb) - d(loading) + d_arg
-              if (spec.include_wave_effects) {
-                const int slot = theta.wave_grad[attitude * theta.n_waves + wave];
-                if (slot >= 0) dest[slot] -= 1.0;
-              }
-              if (person.interviewed[wave]) {
-                const double* x =
-                    person.covariates.data() + static_cast<std::size_t>(wave) * theta.n_covariates;
-                for (int column = 0; column < theta.n_covariates; ++column) {
-                  const int slot = theta.beta_grad[attitude * theta.n_covariates + column];
-                  if (slot >= 0) dest[slot] -= x[column];
-                }
-              }
-              for (int factor = 0; factor < theta.n_factors; ++factor) {
-                const int g = theta.loading_grad[factor * J + attitude];
-                if (g >= 0) dest[g] -= factors[factor];
-              }
+            for (int column = 0; column < G; ++column) {
+              dest[column] = d_pre[column] * (1.0 - scale_y) + d_arg[column];
             }
           }
         }
@@ -398,14 +306,10 @@ bool cholesky_factor(const std::vector<double>& omega, int n, std::vector<double
 }
 
 // GHK path when the innovations in a wave are correlated. Gradients are not
-// returned: evaluate() rejects that combination. The default (corrected)
-// recursion is the standard sequential conditioning on the lower Cholesky
-// factor. fortran_ghk reproduces ghk1's contraction, including the overwrite
-// of aone, but each path starts from a zero latent state rather than from
-// whatever the previous path left in the work array.
+// returned: evaluate() rejects that combination. fortran_ghk follows ghk1.
+// Each path starts from a zero latent state.
 double one_correlated_path(const ModelSpec& spec, const Unpacked& theta, const Person& person,
-                           const DrawSource& source, Dynamics dynamics, Numerics numerics,
-                           bool fortran_ghk) {
+                           const DrawSource& source, Numerics numerics, bool fortran_ghk) {
   const int J = theta.n_attitudes;
   std::vector<double> factor_loading_draw(static_cast<std::size_t>(theta.n_factors));
   for (int factor = 0; factor < theta.n_factors; ++factor) {
@@ -418,7 +322,6 @@ double one_correlated_path(const ModelSpec& spec, const Unpacked& theta, const P
   std::vector<double> state_prev(static_cast<std::size_t>(J), 0.0);
   std::vector<double> state_cur(static_cast<std::size_t>(J), 0.0);
   std::vector<double> eta(static_cast<std::size_t>(J), 0.0);
-  const bool latent = dynamics == Dynamics::kLatentAttitude;
   double path_loglik = 0.0;
 
   for (int wave = person.first_wave; wave <= person.last_wave; ++wave) {
@@ -511,7 +414,7 @@ double one_correlated_path(const ModelSpec& spec, const Unpacked& theta, const P
       if (!observed) {
         const double innovation = conditional_mean + conditional_sd * raw;
         eta[attitude] = raw;
-        state_cur[attitude] = (latent ? (xb + factor_mean + lagged) : lagged) + innovation;
+        state_cur[attitude] = xb + factor_mean + lagged + innovation;
       } else {
         const int base = attitude * theta.max_cuts;
         const double y_without_innovation = xb + factor_mean + lagged;
@@ -523,7 +426,7 @@ double one_correlated_path(const ModelSpec& spec, const Unpacked& theta, const P
         const Truncation draw = truncate_standard_normal(raw, arg_lower, arg_upper, numerics);
         eta[attitude] = draw.shock;
         const double innovation = conditional_mean + conditional_sd * draw.shock;
-        state_cur[attitude] = (latent ? y_without_innovation : lagged) + innovation;
+        state_cur[attitude] = y_without_innovation + innovation;
       }
     }
     state_prev.swap(state_cur);
@@ -535,8 +438,8 @@ double one_correlated_path(const ModelSpec& spec, const Unpacked& theta, const P
 
 double person_contribution(const ModelSpec& spec, const Unpacked& theta, const Person& person,
                            int person_index, const DrawOptions& draws, const float* factor_draws,
-                           const float* shock_draws, Dynamics dynamics, Numerics numerics,
-                           bool fortran_ghk, double* gradient, double* /*score_slot*/) {
+                           const float* shock_draws, Numerics numerics, bool fortran_ghk,
+                           double* gradient, double* /*score_slot*/) {
   if (person.last_wave < person.first_wave || !(person.weight > 0.0)) {
     if (gradient != nullptr) std::fill(gradient, gradient + theta.n_grad, 0.0);
     return 0.0;
@@ -568,13 +471,11 @@ double person_contribution(const ModelSpec& spec, const Unpacked& theta, const P
                                         : nullptr;
       if (correlated) {
         path_loglik[path] =
-            one_correlated_path(spec, theta, person, source, dynamics, numerics, fortran_ghk);
+            one_correlated_path(spec, theta, person, source, numerics, fortran_ghk);
       } else if (with_gradient) {
-        path_loglik[path] =
-            one_path(spec, theta, person, source, dynamics, numerics, true, path_grad);
+        path_loglik[path] = one_path(spec, theta, person, source, numerics, true, path_grad);
       } else {
-        path_loglik[path] =
-            one_path(spec, theta, person, source, dynamics, numerics, false, nullptr);
+        path_loglik[path] = one_path(spec, theta, person, source, numerics, false, nullptr);
       }
       ++path;
     }
@@ -678,19 +579,24 @@ Evaluation evaluate_impl(const Problem& problem, const std::vector<double>& thet
         "is the identity, which is the published model. With a free correlation, "
         "ask for the likelihood only and use a numeric gradient.");
   }
-  if ((request.factor_draws.empty()) != (request.shock_draws.empty())) {
+  const bool external_factors = !request.factor_draws.empty();
+  const bool external_shocks = !request.shock_draws.empty();
+  if (problem.spec.n_factors > 0 && external_factors != external_shocks) {
     throw std::invalid_argument("Factor draws and shock draws must be supplied together.");
   }
+  if (problem.spec.n_factors == 0 && external_factors) {
+    throw std::invalid_argument("This model has no factors, so it does not take factor draws.");
+  }
   const int n_persons = static_cast<int>(problem.persons.size());
-  if (!request.factor_draws.empty()) {
+  if (external_factors || external_shocks) {
     const std::size_t n_factor =
-        static_cast<std::size_t>(n_persons) * problem.draws.n_draws * problem.spec.n_factors;
+        static_cast<std::size_t>(n_persons) * problem.draws.n_draws * std::max(problem.spec.n_factors, 0);
     const std::size_t n_shock = static_cast<std::size_t>(n_persons) * problem.draws.n_draws *
                                 problem.spec.n_attitudes * problem.spec.n_waves;
-    if (problem.spec.n_factors > 0 && request.factor_draws.size() != n_factor) {
+    if (external_factors && request.factor_draws.size() != n_factor) {
       throw std::invalid_argument("The external factor-draw array has the wrong length.");
     }
-    if (request.shock_draws.size() != n_shock) {
+    if (!external_shocks || request.shock_draws.size() != n_shock) {
       throw std::invalid_argument("The external shock-draw array has the wrong length.");
     }
   }
@@ -720,7 +626,7 @@ Evaluation evaluate_impl(const Problem& problem, const std::vector<double>& thet
                                  : nullptr;
       out.person_loglik[person] = detail::person_contribution(
           problem.spec, unpacked, problem.persons[person], person, problem.draws, factor_ptr,
-          shock_ptr, request.dynamics, request.numerics, request.fortran_ghk, score, score);
+          shock_ptr, request.numerics, request.fortran_ghk, score, score);
     }
   };
 

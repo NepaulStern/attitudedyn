@@ -13,14 +13,6 @@
 
 namespace attitudedyn {
 
-// How the lagged latent state is formed. The default matches the Fortran
-// program (the whole latent attitude persists). Shock-only is equation (2)
-// of Nepaul & Stern (2026): only the innovation is autoregressive.
-enum class Dynamics {
-  kLatentAttitude = 0,
-  kShockOnly = 1
-};
-
 // kStable: double-precision log(Phi(b)-Phi(a)), analytic gradient.
 // kShared: Fortran probmake1 tail blend, but with the same double-precision
 //          Phi and Phi^{-1} the patched Fortran oracle calls. No gradient.
@@ -82,9 +74,10 @@ Layout make_layout(const ModelSpec& spec);
 
 // One person. Waves outside [first_wave, last_wave] are not in the
 // recursion. A wave inside the window with interviewed[t] == 0 is a gap:
-// the latent state is simulated forward and covariates are ignored
-// (they must still be finite; the contribution uses a zero regressor
-// vector, matching an uninitialised Fortran slot that the loader zeroed).
+// no item in that wave contributes a probability, and the latent state is
+// simulated forward. Covariates on a gap are still multiplied in, as in
+// preplik12. Store a zero regressor for a wave the data file never
+// contained; that is the zeroed Fortran slot.
 struct Person {
   int first_wave = 0;  // 0-based, inclusive
   int last_wave = -1;  // inclusive; last < first means "drop this person"
@@ -115,7 +108,6 @@ struct Evaluation {
 };
 
 struct EvaluateRequest {
-  Dynamics dynamics = Dynamics::kLatentAttitude;
   Numerics numerics = Numerics::kStable;
   // Reproduce the ghk1 overwrite when the contemporaneous correlation is
   // not the identity. Ignored when that correlation is the identity, which
@@ -195,17 +187,9 @@ struct VarianceComponent {
 };
 
 // Sample variances of x beta and of the wave effects, plus ||lambda||^2 and
-// the long-run shock variance. Wave effects are not also folded into the
-// covariate piece.
+// the long-run shock variance.
 VarianceComponent variance_decomposition(const Problem& problem,
-                                         const std::vector<double>& theta_full,
-                                         Dynamics dynamics);
-
-// The decomposition implemented by the Fortran vardecomp subroutine,
-// including the double appearance of the wave effect (once inside x beta
-// and once on its own) and the product-of-scalars shock accumulation.
-VarianceComponent variance_decomposition_fortran(const Problem& problem,
-                                                  const std::vector<double>& theta_full);
+                                         const std::vector<double>& theta_full);
 
 struct SimulatedPanel {
   int n_persons = 0;
@@ -222,7 +206,7 @@ struct SimulatedPanel {
 // Draw a panel from the structural model (not from the GHK truncation).
 // Covariates are N(0, 1), except intercept columns which are 1.
 SimulatedPanel simulate_panel(const ModelSpec& spec, const std::vector<double>& theta_full,
-                              int n_persons, Dynamics dynamics, std::uint64_t seed);
+                              int n_persons, std::uint64_t seed);
 
 // Category probabilities for every person-wave in `persons`, averaged over
 // `n_draws` structural paths (Rao-Blackwellised interval probabilities).
@@ -239,8 +223,7 @@ struct Prediction {
 };
 
 Prediction predict_probabilities(const Problem& problem, const std::vector<double>& theta_full,
-                                 Dynamics dynamics, int n_draws, std::uint64_t seed,
-                                 int n_threads);
+                                 int n_draws, std::uint64_t seed, int n_threads);
 
 }  // namespace attitudedyn
 
