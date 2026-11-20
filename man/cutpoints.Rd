@@ -17,3 +17,12 @@ ends and between category 1 and category 2.
 \description{
 Ordered cutpoints
 }
+\examples{
+panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+fit <- attitudedyn(
+  cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+  n_factors = 1, draws = 2,
+  control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+)
+cutpoints(fit)
+}

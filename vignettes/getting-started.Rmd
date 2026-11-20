@@ -44,6 +44,14 @@ head(tidy(fit))
 glance(fit)
 ```
 
+`predict()` reports Likert category probabilities for every person-wave in the estimation window. `type = "class"` keeps the category with the largest probability. `simulate()` draws a new panel from the fitted coefficients.
+
+```{r}
+head(predict(fit, type = "prob", n_draws = 2)$y1)
+head(predict(fit, type = "class", n_draws = 2))
+head(simulate(fit, nsim = 1, seed = 2))
+```
+
 `persistence_matrix()` is on the natural scale. The row is the attitude that receives the lag, and the column is the attitude that is lagged.
 
 ```{r}

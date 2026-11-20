@@ -18,3 +18,12 @@ Under a stationary recursion \code{state = R \%*\% state_lag + innovation}, the
 share is the fraction of the long-run variance of the receiving attitude
 that comes from innovations in the source attitude.
 }
+\examples{
+panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+fit <- attitudedyn(
+  cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+  n_factors = 1, draws = 2,
+  control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+)
+influence_shares(fit)
+}

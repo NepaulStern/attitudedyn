@@ -30,6 +30,14 @@ persistence_matrix <- function(object) {
 #' @return A list of numeric vectors, one per attitude. Each vector contains
 #'   the `K + 1` cutpoints, with the normalised values -100, 0 and 100 at the
 #'   ends and between category 1 and category 2.
+#' @examples
+#' panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+#' fit <- attitudedyn(
+#'   cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+#'   n_factors = 1, draws = 2,
+#'   control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+#' )
+#' cutpoints(fit)
 #' @export
 cutpoints <- function(object) {
   object <- ensure_problem(object)
@@ -49,6 +57,14 @@ cutpoints <- function(object) {
 #' @return A list with the array `response` (horizon + 1 by attitude by
 #'   attitude, indexed as receiving attitude then source attitude) and the
 #'   spectral radius.
+#' @examples
+#' panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+#' fit <- attitudedyn(
+#'   cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+#'   n_factors = 1, draws = 2,
+#'   control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+#' )
+#' impulse_response(fit, horizon = 2)
 #' @export
 impulse_response <- function(object, horizon = 8L) {
   matrix <- persistence_matrix(object)
@@ -79,6 +95,14 @@ impulse_response <- function(object, horizon = 8L) {
 #' @param object A fitted model.
 #' @return A matrix of shares, with a `variance` attribute holding the
 #'   long-run variances. The matrix is empty when `R` is not stationary.
+#' @examples
+#' panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+#' fit <- attitudedyn(
+#'   cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+#'   n_factors = 1, draws = 2,
+#'   control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+#' )
+#' influence_shares(fit)
 #' @export
 influence_shares <- function(object) {
   matrix <- persistence_matrix(object)
@@ -109,6 +133,14 @@ influence_shares <- function(object) {
 #' @param object A fitted model.
 #' @return A data frame with one row per attitude. `total` is the sum of the
 #'   four pieces. A `note` attribute describes the columns.
+#' @examples
+#' panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+#' fit <- attitudedyn(
+#'   cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+#'   n_factors = 1, draws = 2,
+#'   control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+#' )
+#' variance_decomposition(fit)
 #' @export
 variance_decomposition <- function(object) {
   object <- ensure_problem(object)
@@ -136,6 +168,14 @@ variance_decomposition <- function(object) {
 #' @param type Covariance type passed to [vcov()].
 #' @return A list with the chi-squared statistic, degrees of freedom and
 #'   p-value.
+#' @examples
+#' panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+#' fit <- attitudedyn(
+#'   cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+#'   n_factors = 1, draws = 2,
+#'   control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "opg")
+#' )
+#' wald_test(fit, c("beta[y1,x]" = 0))
 #' @export
 wald_test <- function(object, hypothesis, type = NULL) {
   if (is.null(names(hypothesis)) || any(names(hypothesis) == "")) {
@@ -163,6 +203,14 @@ wald_test <- function(object, hypothesis, type = NULL) {
 #'   are being tested.
 #' @return A list with the chi-squared statistic, degrees of freedom and
 #'   p-value.
+#' @examples
+#' panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+#' restricted <- attitudedyn(
+#'   cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+#'   n_factors = 1, draws = 2, fix = c("beta[y1,x]" = 0),
+#'   control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+#' )
+#' suppressWarnings(lm_test(restricted, "beta[y1,x]"))
 #' @export
 lm_test <- function(object, coefficients) {
   layout <- object$layout

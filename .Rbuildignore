@@ -1,8 +1,9 @@
-^core/tests
-^core/Makefile
+^src/core/tests
+^src/core/Makefile
 ^notes$
 ^validation$
 ^python(/|$)
+^cran-comments\.md$
 ^\.github$
 ^\.gitignore$
 ^.*\.Rproj$
