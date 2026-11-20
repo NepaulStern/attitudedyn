@@ -1,0 +1,362 @@
+1 2 3 21648 6 10 10 8 2 0 0 100 0.01 5 0 1
+
+7 3 3 5 7 3
+
+  2.182157   2.062633   2.016683   1.911218   1.814316
+  2.074788   2.053152   2.040532 
+
+ -0.288974  -0.431986  -0.230234  -0.346534  -0.169345
+  0.091623  -0.015932  -0.209277 
+
+  0.754801   0.732180   0.609457   0.490702   0.548071
+  0.594784   0.732273   0.687036 
+
+  0.000      1.281411   1.139383   1.022404   1.101800
+  1.490044   1.665957   1.186632 
+
+  1.782558   1.488606   1.481400   1.380246   1.358126
+  1.599914   1.651123   1.574057 
+
+  2.070178   1.949578   1.651075   1.740348   1.863775
+  1.867633   2.062671   2.256044 
+
+
+  0.000      0.008982   0.040462  -0.130068  -0.435073
+ -0.108968   0.033943  -0.151393   0.049200   0.072979
+ 
+  0.000      0.010182   0.028289  -0.303458  -0.490744
+  0.143941   0.237343   0.092568  -0.057434   0.058190
+ 
+  0.000     -0.001086  -0.132459  -0.000429   0.140238
+  0.038297  -0.139943   0.263377  -0.017338  -0.304430
+ 
+  0.000     -0.005815  -0.028636   0.314347   0.459177
+  0.018687  -0.383033  -0.103016  -0.004321   0.004732
+ 
+  0.000      0.001800   0.093144   0.031788  -0.326999
+ -0.203591   0.319309  -0.810813  -0.081421   0.028187
+ 
+  0.000     -0.011738   0.125636   0.264966   0.375711
+  0.169762   0.141081   0.194265   0.037303   0.063079
+ 
+
+  0.495845  -0.067833  -0.064653   0.083946  -0.295428  -0.204263
+ -0.028876   1.106552   0.005233   0.031689  -0.173271   0.023319
+ -0.005644   0.060917   1.194999   0.018066   0.107683  -0.415633
+  0.018960   0.016568   0.098755   0.931168   0.115277  -0.265507
+ -0.473672  -0.159935   0.054936   0.077456   1.010703  -0.073024
+ -0.243381   0.011930  -0.062607  -0.233567  -0.001108   0.582821
+
+
+  0.726998   0.394668  -0.544850  -0.351807   0.899031  -0.709349
+  0.693150   0.316490  -0.133502  -0.163623   0.934630   0.000
+
+
+  0.000   
+  0.000      0.000   
+  0.000      0.000      0.000   
+  0.000      0.000      0.000      0.000   
+  0.000      0.000      0.000      0.000      0.000   
+
+
+  0.069498  -0.538197   0.337051  -0.452306   0.224557  
+  0.185131 
+  0.180517
+ -0.268720   0.266887  -0.322121
+ -0.076301  -0.490752  -0.049491  -0.630703  -0.021089
+  0.318381 
+
+
+  0 0 0 0 0
+  0 0 0
+
+  0 0 0 0 0
+  0 0 0
+
+  0 0 0 0 0
+  0 0 0 
+
+  1 0 0 0 0
+  0 0 0 
+
+  0 0 0 0 0
+  0 0 0
+
+  0 0 0 0 0
+  0 0 0
+
+
+  1 0 0 0 0
+  0 0 0 0 0
+
+  1 0 0 0 0
+  0 0 0 0 0
+
+  1 0 0 0 0
+  0 0 0 0 0
+
+  1 0 0 0 0
+  0 0 0 0 0
+
+  1 0 0 0 0
+  0 0 0 0 0
+
+  1 0 0 0 0
+  0 0 0 0 0
+ 
+
+  0 0 0 0 0 0
+  0 0 0 0 0 0
+  0 0 0 0 0 0
+  0 0 0 0 0 0
+  0 0 0 0 0 0
+  0 0 0 0 0 0
+
+  0 0 0 0 0 0
+  0 0 0 0 0 1
+
+  1  
+  1 1
+  1 1 1
+  1 1 1 1
+  1 1 1 1 1
+
+  0 0 0 0 0
+  0    
+  0    
+  0 0 0
+  0 0 0 0 0 
+  0
+
+fixef101
+fixef102
+fixef103
+fixef104
+fixef105
+fixef106
+fixef107
+fixef108
+fixef201
+fixef202
+fixef203
+fixef204
+fixef205
+fixef206
+fixef207
+fixef208
+fixef301
+fixef302
+fixef303
+fixef304
+fixef305
+fixef306
+fixef307
+fixef308
+fixef401
+fixef402
+fixef403
+fixef404
+fixef405
+fixef406
+fixef407
+fixef408
+fixef501
+fixef502
+fixef503
+fixef504
+fixef505
+fixef506
+fixef507
+fixef508
+fixef601
+fixef602
+fixef603
+fixef604
+fixef605
+fixef606
+fixef607
+fixef608
+constnt1
+age1   
+hs1     
+college1
+advdegr1
+female1 
+white1  
+black1  
+income11
+income12
+constnt2
+age2   
+hs2     
+college2
+advdegr2
+female2 
+white2  
+black2  
+income21 
+income22 
+constnt3
+age3   
+hs3     
+college3
+advdegr3
+female3 
+white3  
+black3  
+income31 
+income32 
+constnt4
+age4   
+hs4     
+college4
+advdegr4
+female4 
+white4  
+black4  
+income41
+income42
+constnt5
+age5   
+hs5
+college5
+advdegr5
+female5 
+white5  
+black5  
+income51
+income52
+constnt6
+age6   
+hs6
+college6
+advdegr6
+female6 
+white6  
+black6  
+income61
+income62
+rho11
+rho12
+rho13
+rho14
+rho15
+rho16
+rho21
+rho22
+rho23
+rho24
+rho25
+rho26
+rho31
+rho32
+rho33
+rho34
+rho35
+rho36
+rho41
+rho42
+rho43
+rho44
+rho45
+rho46
+rho51
+rho52
+rho53
+rho54
+rho55
+rho56
+rho61
+rho62
+rho63
+rho64
+rho65
+rho66
+alamb11
+alamb12
+alamb13
+alamb14
+alamb15
+alamb16
+alamb21
+alamb22
+alamb23
+alamb24
+alamb25
+alamb26
+chol21
+chol31
+chol32
+chol41
+chol42
+chol43
+chol51
+chol52
+chol53
+chol54
+chol61
+chol62
+chol63
+chol64
+chol65
+tau13
+tau14
+tau15
+tau16
+tau17
+tau23
+tau33
+tau43
+tau44
+tau45
+tau53
+tau54
+tau55
+tau56
+tau57
+tau63
+tau54
+tau63
+
+method,model,idata,nobs,ny,nx,nr,ntime,nfac,irhobessel,ifcond1,niter,
+       stp1,nrst,ifsattr,ifwvdum
+nseg
+coef
+icoef
+alabel
+
+alabel  = labels of variables
+coef    = initial value of coefficients
+icoef   = restriction flags for coefficients to estimate (0 => no 
+          restriction)
+idata   = data set #
+ifcond1 = flag for whether to condition on first dependent variable for
+          each observation
+ifsattr = 0 do not use democracy satisfaction and trust variables
+          1 use democracy and trust variables but excluse observations
+            with missing values
+          2 use democracy and trust variables, interpolate missing
+            variables when possible, but exclude otherwise
+          3 use democracy and trust variables, interpolate and 
+            extrapolate missing variables when possible, exclude 
+            otherwise
+          4 report possibilities for interpolation and extrapolation 
+            of missing democracy and trust variables
+ifwvdum = flag for whether to include wave dummies
+method  = 0 for test of log likelihood function
+          1 for estimation
+          2 for estimation of asymptotic covariance matrix
+          3 for variable test (vartest)
+model   = 1 for simple model
+          2 for complex model
+nfac    = # factors
+niter   = maximum # iterations for each gqopt call
+nobs    = # observations
+nx      = # explanatory variables
+nr      = # draws for simulation
+nrst    = maximum # restarts allowed for each gqopt call
+nseg    = vector of # different values for ordered discrete dependent 
+          variable(s)
+ntime   = # time periods
+ny      = # dependent variables
+stp1    = initial gqopt stepsize
