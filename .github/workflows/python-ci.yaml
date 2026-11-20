@@ -1,4 +1,4 @@
-# Build the Python package against core/ and run pytest.
+# Build the Python package against src/core/ and run pytest.
 # OpenMP is not used. Apple clang and MSVC both build the C++17 sources.
 name: python-ci
 

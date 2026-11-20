@@ -22,7 +22,7 @@ test_that("bad inputs are rejected with a useful error", {
   broken <- panel
   broken$x[1] <- Inf
   expect_error(
-    attitudedyn(cbind(y1, y2) ~ x, data = broken, id = ~ id, wave = ~ wave),
+    attitudedyn(cbind(y1, y2) ~ x, data = broken, id = ~ id, wave = ~ wave, time = ~ time),
     "covariate"
   )
 })
@@ -185,4 +185,44 @@ test_that("a short fit returns the methods the package promises", {
   loaded <- readRDS(path)
   expect_equal(persistence_matrix(loaded), persistence_matrix(fit))
   expect_equal(variance_decomposition(loaded)$total, variance_decomposition(fit)$total)
+})
+
+test_that("centred outer product is the default, and hessian and sandwich are covariances", {
+  expect_identical(attitudedyn_control()$vcov, "opg_centered")
+  panel <- simulate_attitudes(
+    n_persons = 80, n_waves = 3, n_attitudes = 2, n_factors = 1, n_categories = 3, seed = 4
+  )
+  truth <- attr(panel, "theta_full")
+  fit <- attitudedyn(
+    cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+    n_factors = 1L, draws = 4L, start = truth,
+    control = attitudedyn_control(maxit = 40L, n_threads = 1L, vcov = "none")
+  )
+  expect_identical(fit$convergence, 0L)
+  centred <- vcov(fit, type = "opg_centered")
+  hessian <- vcov(fit, type = "hessian")
+  sandwich <- vcov(fit, type = "sandwich")
+  expect_equal(dim(hessian), dim(centred))
+  expect_equal(dim(sandwich), dim(centred))
+  expect_equal(hessian, t(hessian))
+  expect_equal(sandwich, t(sandwich))
+  expect_true(all(diag(hessian) > 0))
+  expect_true(all(diag(sandwich) > 0))
+
+  kept_scores <- fit$scores[fit$inputs$weight > 0, , drop = FALSE]
+  centred_scores <- sweep(kept_scores, 2L, colMeans(kept_scores), check.margin = FALSE)
+  expect_equal(centred, solve(crossprod(centred_scores)))
+  inverse_negative_hessian <- solve(-attitudedyn:::numerical_hessian_of_analytic_gradient(fit))
+  outer_product <- crossprod(kept_scores)
+  expect_equal(unname(hessian), unname(inverse_negative_hessian))
+  expect_equal(
+    unname(sandwich),
+    unname(inverse_negative_hessian %*% outer_product %*% inverse_negative_hessian)
+  )
+
+  shown <- summary(fit, vcov_type = "hessian")
+  expect_identical(shown$summary$type, "hessian")
+  expect_equal(unname(shown$summary$coefficients[, "Std. Error"]), unname(sqrt(diag(hessian))))
+  expect_identical(summary(fit, type = "sandwich")$summary$type, "sandwich")
+  expect_identical(summary(fit)$summary$type, "none")
 })

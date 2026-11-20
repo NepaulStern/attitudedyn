@@ -10,6 +10,7 @@ except for age, which is filled from the first wave whose age is at least
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -70,13 +71,32 @@ _ESTIMATE_ROW = re.compile(
 _NUMBER = re.compile(r"-?[0-9]+\.[0-9]+")
 
 
+def _contains_gss_file_and_core(candidate: Path) -> bool:
+    """True when this directory is a checkout with the GSS file and src/core."""
+    data = candidate / "validation" / "fortran" / "data" / "gss2.prn"
+    core_header = candidate / "src" / "core" / "include" / "attitudedyn" / "api.hpp"
+    return data.exists() and core_header.exists()
+
+
 def repository_root() -> Path:
-    """Return the checkout that contains ``core/`` and the GSS file."""
+    """Return the checkout that contains ``src/core`` and the GSS file.
+
+    ``ATTDYN_REPOSITORY_ROOT`` overrides the search. Wheel tests set it
+    because pytest's working directory is outside the checkout.
+    """
+    override = os.environ.get("ATTDYN_REPOSITORY_ROOT")
+    if override:
+        candidate = Path(override)
+        if not _contains_gss_file_and_core(candidate):
+            raise FileNotFoundError(
+                f"ATTDYN_REPOSITORY_ROOT={override} does not contain the GSS file and the C++ core."
+            )
+        return candidate
     starts = [Path.cwd(), Path(__file__).resolve()]
     for origin in starts:
         for candidate in [origin, *origin.parents]:
             data = candidate / "validation" / "fortran" / "data" / "gss2.prn"
-            core = candidate / "core" / "include" / "attitudedyn" / "api.hpp"
+            core = candidate / "src" / "core" / "include" / "attitudedyn" / "api.hpp"
             if data.exists() and core.exists():
                 return candidate
     raise FileNotFoundError(

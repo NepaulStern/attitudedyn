@@ -154,3 +154,45 @@ def test_result_methods_on_a_short_fit():
     assert isinstance(drawn, pd.DataFrame)
     assert {"id", "wave", "y1", "y2"}.issubset(drawn.columns)
     assert np.isfinite(result.aic) and np.isfinite(result.bic)
+
+
+def test_centred_outer_product_is_the_default_and_summary_selects_the_covariance():
+    panel = attitudedyn.simulate_attitudes(
+        n_persons=80, n_waves=3, n_attitudes=2, n_factors=1, n_categories=3, seed=4
+    )
+    result = attitudedyn.fit(
+        panel,
+        formula="cbind(y1, y2) ~ x",
+        id_col="id",
+        wave_col="wave",
+        time_col="time",
+        n_factors=1,
+        draws=4,
+        maxit=40,
+        threads=1,
+        start=panel.attrs["theta"],
+    )
+    assert result.convergence == 0
+    assert "Covariance type: opg_centered" in result.summary()
+    centred = result.vcov(type="opg_centered")
+    hessian = result.vcov(type="hessian")
+    sandwich = result.vcov(type="sandwich")
+    assert hessian.shape == centred.shape == sandwich.shape
+    assert np.allclose(hessian.to_numpy(), hessian.to_numpy().T)
+    assert np.allclose(sandwich.to_numpy(), sandwich.to_numpy().T)
+    assert np.all(np.diag(hessian.to_numpy()) > 0)
+    assert np.all(np.diag(sandwich.to_numpy()) > 0)
+
+    person_scores = result._person_scores("opg")
+    centred_scores = person_scores - person_scores.mean(axis=0, keepdims=True)
+    manual_centred = np.linalg.inv(centred_scores.T @ centred_scores)
+    hessian_matrix = result._numerical_hessian_of_analytic_gradient()
+    inverse_negative_hessian = np.linalg.inv(-hessian_matrix)
+    outer_product = person_scores.T @ person_scores
+    assert np.allclose(centred.to_numpy(), manual_centred)
+    assert np.allclose(hessian.to_numpy(), inverse_negative_hessian)
+    assert np.allclose(sandwich.to_numpy(), inverse_negative_hessian @ outer_product @ inverse_negative_hessian)
+
+    hessian_summary = result.summary(vcov_type="hessian")
+    assert "Covariance type: hessian" in hessian_summary
+    assert "Covariance type: sandwich" in result.summary(type="sandwich")

@@ -5,7 +5,7 @@
 FC = gfortran
 FFLAGS = -O1 -std=legacy -ffixed-form -ffixed-line-length-none -fopenmp
 CXX = g++
-CXXFLAGS = -std=c++17 -O2 -I../../core/include
+CXXFLAGS = -std=c++17 -O2 -I../../src/core/include
 
 FORTRAN_SRC = src/opt.f src/nmsimp.f src/lnsr.f src/matp.f src/eigrs.f src/bdummy.f
 
@@ -30,10 +30,10 @@ build/alecia_oracle: build/alecia_oracle.f oracle_extra.f shared_math.cpp $(FORT
 	  build/shared_math.o build/opt.o build/nmsimp.o build/lnsr.o build/matp.o \
 	  build/eigrs.o build/bdummy.o -lstdc++
 
-build/compare_gss: ../compare_gss.cpp ../../core/src/layout.cpp ../../core/src/likelihood.cpp \
-	../../core/src/draws.cpp ../../core/src/postestimation.cpp
-	$(CXX) $(CXXFLAGS) -o build/compare_gss ../compare_gss.cpp ../../core/src/layout.cpp \
-	  ../../core/src/likelihood.cpp ../../core/src/draws.cpp ../../core/src/postestimation.cpp -pthread
+build/compare_gss: ../compare_gss.cpp ../../src/core/src/layout.cpp ../../src/core/src/likelihood.cpp \
+	../../src/core/src/draws.cpp ../../src/core/src/postestimation.cpp
+	$(CXX) $(CXXFLAGS) -o build/compare_gss ../compare_gss.cpp ../../src/core/src/layout.cpp \
+	  ../../src/core/src/likelihood.cpp ../../src/core/src/draws.cpp ../../src/core/src/postestimation.cpp -pthread
 
 clean:
 	rm -rf build

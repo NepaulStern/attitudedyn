@@ -18,7 +18,7 @@ That command needs Python 3.10 or newer, a C++17 compiler, and CMake. On
 macOS the compiler is Apple clang. OpenMP is not required and is not used.
 On Windows the compiler is MSVC. `pip` builds a wheel with
 `scikit-build-core` and pybind11, and the wheel links the sources in
-`core/` directly. R is not installed and not imported.
+`src/core/` directly. R is not installed and not imported.
 
 The Python dependencies are NumPy, SciPy, and pandas. Tests additionally
 need pytest:
@@ -31,15 +31,15 @@ python -m pytest python/tests
 ## What each file is
 
 - `python/pyproject.toml` names the package and the build backend.
-- `python/CMakeLists.txt` compiles `core/src/*.cpp` together with
+- `python/CMakeLists.txt` compiles `src/core/src/*.cpp` together with
   `python/src/bindings.cpp`. The binding copies arrays into the types
-  declared in `core/include/attitudedyn/api.hpp` and copies results back.
+  declared in `src/core/include/attitudedyn/api.hpp` and copies results back.
 - `python/src/attitudedyn/` is the code a user imports: `fit`, the result
   object, simulation, and the GSS reader.
 - `python/tests/` is the pytest suite.
 - `python/validation/run_gss.py` evaluates the GSS application.
 
-`core/` itself is unchanged by the wrapper. The R package and
+`src/core/` itself is unchanged by the wrapper. The R package and
 `R CMD check` do not see `python/`, because `.Rbuildignore` excludes it.
 
 ## How a fit runs
@@ -66,11 +66,12 @@ The wrapper turns that objective into `1e12` so the line search can reject
 the step and continue. The reported fit is the best finite point seen during
 the search.
 
-Standard errors default to the inverse outer product of the person scores
-(`vcov="opg"`). `opg_centered` subtracts the column means first, which is
-the covariance printed with the replication estimates. `hessian` is the
-inverse negative numerical Hessian of the analytic gradient. `sandwich`
-combines that Hessian with the outer product of the scores.
+Standard errors default to the centred outer product of the person scores
+(`vcov="opg_centered"`), which is the covariance printed with the
+replication estimates. `opg` skips the centring. `hessian` inverts the
+negative numerical Hessian of the analytic gradient. `sandwich` is that
+inverse, times the uncentred outer product of the scores, times the
+inverse. `summary(vcov_type=...)` selects the same covariance.
 
 `AttitudeDynResult` exposes `params`, `bse`, `pvalues`, `conf_int`,
 `summary`, `loglik`, `aic`, `bic`, `nobs`, `vcov`, `persistence_matrix`,

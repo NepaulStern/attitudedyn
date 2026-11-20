@@ -11,7 +11,7 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-This note describes the model that `attitudedyn` evaluates. The numerical work is the C++ library under `core/`. The R functions pass it a long panel and the unconstrained coefficients.
+This note describes the model that `attitudedyn` evaluates. The numerical work is the C++ library under `src/core/`. The R functions pass it a long panel and the unconstrained coefficients.
 
 ```{r}
 library(attitudedyn)
@@ -46,4 +46,4 @@ The default draws are Philox, a counter-based generator. The counter is keyed by
 
 ## Estimation
 
-The optimiser sees unconstrained coefficients. A persistence coefficient `c` enters the recursion as `2 exp(c) / (1 + exp(c)) - 1`, which lies in (-1, 1). BFGS uses the analytic gradient and the same iteration as `stats::optim(method = "BFGS")`. `maxit = 0` evaluates the starting values and returns. The outer-product covariance inverts the person-score cross product. `opg_centered` subtracts the mean score first, which is the covariance printed with the replication estimates.
+The optimiser sees unconstrained coefficients. A persistence coefficient `c` enters the recursion as `2 exp(c) / (1 + exp(c)) - 1`, which lies in (-1, 1). BFGS uses the analytic gradient and the same iteration as `stats::optim(method = "BFGS")`. `maxit = 0` evaluates the starting values and returns. The default covariance, `opg_centered`, subtracts the mean person score and inverts the outer product. That is the covariance printed with the replication estimates. `opg` skips the centring. `hessian` inverts the negative numerical Hessian of the analytic gradient. `sandwich` is that inverse, times the uncentred outer product of the scores, times the inverse. `summary(fit, vcov_type = ...)` selects among them.

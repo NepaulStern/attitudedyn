@@ -3,7 +3,7 @@
 Python interface to the dynamic ordered-probit model in Nepaul and Stern
 (2026, *Political Analysis*). The likelihood is the GHK simulated likelihood
 from the authors' replication package. The numerical work is the C++17
-library in `../core/`; this directory is a wrapper around that library and
+library in `../src/core/`; this directory is a wrapper around that library and
 does not reimplement it. There is no R dependency.
 
 ## Install
@@ -14,7 +14,7 @@ A C++17 compiler and CMake are required. From a checkout of the repository:
 pip install ./python
 ```
 
-`pip` compiles `core/` with `scikit-build-core` and pybind11. The same
+`pip` compiles `src/core/` with `scikit-build-core` and pybind11. The same
 sources build with Apple clang (OpenMP is not used) and with MSVC. Person
 contributions are summed with the core's `std::thread` pool. The `threads`
 argument changes the speed and not the value.
@@ -89,10 +89,12 @@ accepts `cbind(...)` and bare column names, including `` 0 + `(Intercept)` ``
 to use a column of ones already in the data.
 
 `result.params`, `result.bse`, and `result.pvalues` are named Series.
-`result.vcov()` defaults to the outer product of the person scores (`opg`).
-`opg_centered` centres those scores first, which is the covariance printed
-with the replication estimates. `hessian` and `sandwich` are the other
-covariance options.
+`result.vcov()` defaults to the centred outer product of the person scores
+(`opg_centered`), which is the covariance printed with the replication
+estimates. `opg` skips the centring. `hessian` inverts the negative
+numerical Hessian of the analytic gradient. `sandwich` is that inverse,
+times the uncentred outer product of the scores, times the inverse.
+`summary(vcov_type=...)` selects the same covariance.
 
 BFGS uses the same Nash iteration as `stats::optim(method = "BFGS")` in the
 R package. L-BFGS-B uses SciPy. Both use the analytic gradient. A trial step

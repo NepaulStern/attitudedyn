@@ -41,7 +41,7 @@ def fit(
     maxit: int = 200,
     reltol: float = 1e-8,
     use_gradient: bool = True,
-    vcov: str = "opg",
+    vcov: str = "opg_centered",
     numerics: str = "stable",
     fortran_ghk: bool = False,
     fix_last_loading: bool = True,
@@ -128,10 +128,12 @@ def fit(
         to compare with a numeric gradient.
     vcov :
         Covariance computed with the fit and returned by
-        :meth:`AttitudeDynResult.vcov`. ``"opg"`` is the inverse outer
-        product of the person scores. ``"opg_centered"`` centres those
-        scores first. ``"hessian"`` and ``"sandwich"`` are also available.
-        ``"none"`` skips it.
+        :meth:`AttitudeDynResult.vcov`. ``"opg_centered"``, the default,
+        centres the person scores and inverts their outer product.
+        ``"opg"`` is that inverse without centring. ``"hessian"`` inverts
+        the negative numerical Hessian of the analytic gradient.
+        ``"sandwich"`` is that inverse, times the uncentred outer product
+        of the scores, times the inverse. ``"none"`` skips it.
     numerics :
         ``"stable"`` uses a double-precision log of a normal interval
         probability and is required for the gradient. ``"shared"`` uses the

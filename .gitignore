@@ -8,7 +8,9 @@ src/*.o
 src/*.so
 src/*.dll
 src/*.rds
-core/tests/test_core
+src/core/tests/test_core
+attitudedyn-Ex.*
+*.tar.gz
 validation/fortran/build/
 validation/fortran/run/
 validation/output/
@@ -22,5 +24,7 @@ __pycache__/
 python/build/
 python/_skbuild/
 python/dist/
+wheel-stage/
+wheelhouse/
 python/src/attitudedyn/_core*.so
 python/src/attitudedyn/_core*.pyd

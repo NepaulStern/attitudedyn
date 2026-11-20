@@ -13,7 +13,7 @@ attitudedyn_control(
   maxit = 200L,
   reltol = 1e-08,
   use_gradient = TRUE,
-  vcov = c("opg", "opg_centered", "hessian", "sandwich", "none"),
+  vcov = c("opg_centered", "opg", "hessian", "sandwich", "none"),
   numerics = c("stable", "shared"),
   fortran_ghk = FALSE,
   fix_last_loading = TRUE,
@@ -51,10 +51,12 @@ compare with a numeric gradient. A free contemporaneous correlation has
 no analytic gradient; the fit then uses numeric derivatives and says so.}
 
 \item{vcov}{Which covariance to compute and store with the fit.
-\code{"opg"} is the inverse outer product of the person scores.
-\code{"opg_centered"} centres those scores first, which is what the Fortran
-program did. \code{"hessian"} is the inverse negative numerical Hessian.
-\code{"sandwich"} is the robust covariance. \code{"none"} skips it.}
+\code{"opg_centered"}, the default, centres the person scores and inverts
+their outer product, which is what the Fortran program did.
+\code{"opg"} is the same inverse without centring. \code{"hessian"} inverts
+the negative numerical Hessian of the analytic gradient. \code{"sandwich"}
+is that inverse, times the uncentred outer product of the scores, times
+the inverse. \code{"none"} skips it.}
 
 \item{numerics}{\code{"stable"} uses a double-precision log of a normal
 interval probability. \code{"shared"} reproduces the original tail blend so
