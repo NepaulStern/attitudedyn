@@ -1,6 +1,7 @@
 #' Persistence matrix on the natural scale
 #'
-#' Row `to` and column `from` is the coefficient that multiplies attitude
+#' Persistence coefficients from a fit of The Nepaul-Stern Model. Row `to`
+#' and column `from` is the coefficient that multiplies attitude
 #' `from` in the recursion for attitude `to`, before it is raised to the gap
 #' between waves. Values lie in (-1, 1).
 #'
@@ -26,6 +27,9 @@ persistence_matrix <- function(object) {
 
 #' Ordered cutpoints
 #'
+#' Cutpoints that turn the latent attitude in The Nepaul-Stern Model into a
+#' Likert category.
+#'
 #' @param object A fitted [attitudedyn()] model.
 #' @return A list of numeric vectors, one per attitude. Each vector contains
 #'   the `K + 1` cutpoints, with the normalised values -100, 0 and 100 at the
@@ -48,7 +52,8 @@ cutpoints <- function(object) {
 
 #' Impulse responses of the persistence matrix
 #'
-#' The response at horizon 0 is the identity. Later horizons are powers of the
+#' How a one-time shock to a latent attitude spreads through The Nepaul-Stern
+#' Model. The response at horizon 0 is the identity. Later horizons are powers of the
 #' natural persistence matrix, which is the recursion over a gap of one time
 #' unit. The path is that of a one-time innovation to the latent attitude.
 #'
@@ -88,7 +93,8 @@ impulse_response <- function(object, horizon = 8L) {
 
 #' Long-run influence of one attitude's innovation on another
 #'
-#' Under a stationary recursion `state = R %*% state_lag + innovation`, the
+#' For a fit of The Nepaul-Stern Model, under a stationary recursion
+#' `state = R %*% state_lag + innovation`, the
 #' share is the fraction of the long-run variance of the receiving attitude
 #' that comes from innovations in the source attitude.
 #'
@@ -121,7 +127,8 @@ influence_shares <- function(object) {
 
 #' Variance decomposition of the latent attitude
 #'
-#' Reports the four pieces printed by the replication program. `covariate`
+#' Splits the variance of each latent attitude in The Nepaul-Stern Model
+#' into four pieces. `covariate`
 #' is the variance of the wave effect plus the covariate index. `wave_effect`
 #' is the variance of the wave effect on its own. `factor` is the sum of
 #' squared loadings. `shock` averages, across included people, the

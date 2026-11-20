@@ -2,19 +2,18 @@
 % Please edit documentation in R/methods.R
 \name{summary.attitudedyn}
 \alias{summary.attitudedyn}
-\title{Summarise a fitted attitude model}
+\title{Summarise a fit of The Nepaul-Stern Model}
 \usage{
 \method{summary}{attitudedyn}(object, vcov_type = NULL, type = NULL, ...)
 }
 \arguments{
 \item{object}{A fitted model.}
 
-\item{vcov_type}{Covariance passed to \code{\link[=vcov]{vcov()}}.
-\code{"opg_centered"} centres the person scores and inverts their outer
-product. \code{"hessian"} inverts the negative numerical Hessian of the
-analytic gradient. \code{"sandwich"} is that inverse, times the uncentred
-outer product of the scores, times the inverse. The default is the
-covariance stored with the fit.}
+\item{vcov_type}{Covariance passed to \code{\link[=vcov]{vcov()}}. \code{"opg_centered"} centres
+the person scores and inverts their outer product. \code{"hessian"} inverts
+the negative numerical Hessian of the analytic gradient. \code{"sandwich"}
+is that inverse, times the uncentred outer product of the scores, times
+the inverse. The default is the covariance stored with the fit.}
 
 \item{type}{The same choice as \code{vcov_type}.}
 
@@ -24,5 +23,6 @@ covariance stored with the fit.}
 An object of class \code{"summary.attitudedyn"}.
 }
 \description{
-Summarise a fitted attitude model
+Prints the log-likelihood, the coefficients, and the persistence matrix
+for a fit of The Nepaul-Stern Model of Attitude Stability and Constraint.
 }

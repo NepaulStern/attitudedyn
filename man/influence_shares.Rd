@@ -14,7 +14,8 @@ A matrix of shares, with a \code{variance} attribute holding the
 long-run variances. The matrix is empty when \code{R} is not stationary.
 }
 \description{
-Under a stationary recursion \code{state = R \%*\% state_lag + innovation}, the
+For a fit of The Nepaul-Stern Model, under a stationary recursion
+\code{state = R \%*\% state_lag + innovation}, the
 share is the fraction of the long-run variance of the receiving attitude
 that comes from innovations in the source attitude.
 }

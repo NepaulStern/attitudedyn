@@ -15,7 +15,8 @@ the \code{K + 1} cutpoints, with the normalised values -100, 0 and 100 at the
 ends and between category 1 and category 2.
 }
 \description{
-Ordered cutpoints
+Cutpoints that turn the latent attitude in The Nepaul-Stern Model into a
+Likert category.
 }
 \examples{
 panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)

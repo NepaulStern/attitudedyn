@@ -1,4 +1,4 @@
-"""Draw a panel from the structural model."""
+"""Draw Likert items from The Nepaul-Stern Model."""
 
 from __future__ import annotations
 
@@ -21,10 +21,11 @@ def simulate_attitudes(
     wave_time: list[float] | None = None,
     include_wave_effects: bool = False,
 ) -> pd.DataFrame:
-    """Simulate a panel from the structural model.
+    """Simulate Likert items from The Nepaul-Stern Model.
 
     Covariates are an intercept and one standard normal regressor. Outcomes
-    are named ``y1``, ``y2``, and so on. Category 1 is the lowest category.
+    are Likert items named ``y1``, ``y2``, and so on, coded ``1, ..., K``.
+    Category 1 is the lowest category.
     The returned frame is ready for :func:`attitudedyn.fit` with
     ``formula="cbind(y1, y2) ~ x"``. The data-generating persistence on the
     diagonal is 0.45, the slope on ``x`` is 0.5, and the intercept is 0.2.

@@ -1,5 +1,8 @@
 #' Control parameters for [attitudedyn()]
 #'
+#' Settings for the random draws, the search, and the standard errors when
+#' fitting The Nepaul-Stern Model of Attitude Stability and Constraint.
+#'
 #' @param antithetic Pair each draw with its sign-flipped twin, as in the
 #'   original program. The reported draw count is the number of pairs.
 #' @param draw_type `"philox"` is a counter-based pseudorandom generator keyed

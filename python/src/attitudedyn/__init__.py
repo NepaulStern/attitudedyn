@@ -1,10 +1,10 @@
-"""Dynamic ordered-probit models for ordinal panel attitudes.
+"""The Nepaul-Stern Model of Attitude Stability and Constraint.
 
-The numerical work is the C++ library in ``src/core/``. This package is a
-wrapper: it prepares a long panel, calls that library for the likelihood
-and its analytic gradient, and maximises the likelihood. BFGS follows
-the same iteration as the R package. L-BFGS-B and Nelder-Mead use
-``scipy.optimize``.
+Estimates a model of several Likert-scale attitudes measured on the same
+people across survey waves. The latent attitude carries forward from one
+wave to the next, and the recorded answer is the Likert category that
+latent attitude falls into. The same model is available in the R package
+``attitudedyn``.
 """
 
 from __future__ import annotations

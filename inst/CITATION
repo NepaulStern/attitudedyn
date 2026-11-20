@@ -1,4 +1,4 @@
-citHeader("To cite the model and the replication package in publications use:")
+citHeader("To cite The Nepaul-Stern Model of Attitude Stability and Constraint, and the replication package, in publications use:")
 
 bibentry(
   bibtype = "Article",

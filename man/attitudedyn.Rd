@@ -2,7 +2,7 @@
 % Please edit documentation in R/fit.R
 \name{attitudedyn}
 \alias{attitudedyn}
-\title{Fit a dynamic ordinal attitude model}
+\title{Fit The Nepaul-Stern Model of Attitude Stability and Constraint}
 \usage{
 attitudedyn(
   formula,
@@ -24,8 +24,8 @@ attitudedyn(
 )
 }
 \arguments{
-\item{formula}{A formula. The left-hand side is one outcome or
-\code{\link[=cbind]{cbind()}} of ordinal outcomes coded \verb{1, ..., K}.}
+\item{formula}{A formula. The left-hand side is one Likert item or
+\code{\link[=cbind]{cbind()}} of Likert items coded \verb{1, ..., K}.}
 
 \item{data}{A long-format data frame.}
 
@@ -73,11 +73,12 @@ on the unconstrained scale.}
 An object of class \code{"attitudedyn"}.
 }
 \description{
-Estimates the panel ordered-probit model in the Nepaul and Stern (2026)
-replication package by simulated maximum likelihood. Several ordinal
-attitudes are linked by a matrix of persistence coefficients and by
-person-level factors. The whole latent attitude carries forward from one
-wave to the next, as in the Fortran likelihood.
+Estimates The Nepaul-Stern Model of Attitude Stability and Constraint
+by simulated maximum likelihood. Several Likert-scale attitudes, measured
+on the same people across survey waves, are linked by a matrix of
+persistence coefficients and by person-level factors. The latent attitude
+carries forward from one wave to the next. The recorded answer is the
+Likert category that latent attitude falls into.
 }
 \details{
 The formula has one row per person-wave and one column per attitude:

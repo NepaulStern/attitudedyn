@@ -36,7 +36,8 @@ For \code{"class"}, a data frame with one integer column per attitude.
 For \code{"latent"}, a data frame with one numeric column per attitude.
 }
 \description{
-Averages structural paths from the fitted model. Each path uses the
+Predicted answers from a fit of The Nepaul-Stern Model. The function
+averages structural paths from the fitted model. Each path uses the
 person's covariates, factors, and lagged latent attitude. The category
 probability on a path is the normal interval probability around that
 latent value, and the reported probability is the average across paths.

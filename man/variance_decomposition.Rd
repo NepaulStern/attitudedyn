@@ -14,7 +14,8 @@ A data frame with one row per attitude. \code{total} is the sum of the
 four pieces. A \code{note} attribute describes the columns.
 }
 \description{
-Reports the four pieces printed by the replication program. \code{covariate}
+Splits the variance of each latent attitude in The Nepaul-Stern Model
+into four pieces. \code{covariate}
 is the variance of the wave effect plus the covariate index. \code{wave_effect}
 is the variance of the wave effect on its own. \code{factor} is the sum of
 squared loadings. \code{shock} averages, across included people, the

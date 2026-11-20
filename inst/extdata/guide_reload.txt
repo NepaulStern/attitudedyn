@@ -1,4 +1,4 @@
-Dynamic ordinal attitude model
+The Nepaul-Stern Model of Attitude Stability and Constraint
 Log-likelihood: -111571
 People: 11252   Attitudes: 6   Waves: 8
 Draws: 10 (plus antithetic twins)
