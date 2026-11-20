@@ -5,8 +5,22 @@
 on:
   push:
     branches: [main, master]
+    paths-ignore:
+      - "**.md"
+      - "vignettes/**"
+      - "docs/**"
+      - "notes/**"
+      - "man/figures/**"
+      - "python/docs/**"
   pull_request:
     branches: [main, master]
+    paths-ignore:
+      - "**.md"
+      - "vignettes/**"
+      - "docs/**"
+      - "notes/**"
+      - "man/figures/**"
+      - "python/docs/**"
 
 name: R-CMD-check
 

@@ -1,0 +1,7 @@
+Dynamic ordinal attitude model
+Log-likelihood: -111571
+People: 11252   Attitudes: 6   Waves: 8
+Draws: 10 (plus antithetic twins)
+Free coefficients: 164
+Converged.
+persistence identical after reload: TRUE

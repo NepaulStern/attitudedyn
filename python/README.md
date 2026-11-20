@@ -6,6 +6,13 @@ from the authors' replication package. The numerical work is the C++17
 library in `../src/core/`; this directory is a wrapper around that library and
 does not reimplement it. There is no R dependency.
 
+## Getting started
+
+[`docs/user_guide.md`](docs/user_guide.md) is the walkthrough. It reads the
+General Social Survey panel, fits the application, and reads the summary,
+persistence, impulse responses, variance decomposition, predictions, and
+simulated panels. The R guide is `vignettes/user-guide.Rmd`.
+
 ## Install
 
 A C++17 compiler and CMake are required. From a checkout of the repository:
@@ -52,37 +59,10 @@ plus the covariate index, `wave_effect` is the variance of the wave effect,
 finite-horizon persistence contribution. `impulse_response()` returns
 powers of the persistence matrix. Horizon 0 is the identity.
 
-The General Social Survey call has the same shape and does not iterate
-when `maxit` is 0. Run it from a checkout so the data path resolves.
-
-```python
-from attitudedyn.gss import COVARIATES, OUTCOMES, TIME_GRID, read_gss, read_gss_estimates
-
-panel = read_gss("validation/fortran/data/gss2.prn")
-estimates = read_gss_estimates("validation/fortran/src/gss_log.txt")
-gss = attitudedyn.fit(
-    panel,
-    outcomes=OUTCOMES,
-    covariates=COVARIATES,
-    id_col="id",
-    wave_col="wave",
-    time_grid=TIME_GRID,
-    weights="weight",
-    n_factors=2,
-    draws=10,
-    add_intercept=False,
-    start=estimates.to_numpy(),
-    threads=1,
-    maxit=0,
-    vcov="opg_centered",
-    seed=1,
-)
-print(gss.summary())
-gss.to_dataframe().head()
-gss.persistence_matrix()
-gss.variance_decomposition()
-gss.impulse_response().to_dataframe()
-```
+The General Social Survey walkthrough, with the output of that call, is
+[`docs/user_guide.md`](docs/user_guide.md). Run it from a checkout so
+`validation/fortran/data/gss2.prn` resolves. `maxit=0` evaluates `start`
+and does not iterate.
 
 Column lists work the same way when there is no formula. The formula helper
 accepts `cbind(...)` and bare column names, including `` 0 + `(Intercept)` ``
