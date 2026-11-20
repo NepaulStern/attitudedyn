@@ -17,7 +17,7 @@ guide_text <- function(name) {
 
 This guide shows how to estimate The Nepaul-Stern Model of Attitude Stability and Constraint with `attitudedyn`. The model is for several Likert-scale attitudes measured on the same people across survey waves. Each person has a latent attitude that carries forward from one wave to the next. The recorded answer is the Likert category that latent attitude falls into.
 
-The worked example is the General Social Survey (GSS) application. Nepaul and Stern (2026) discuss what those estimates mean. A short account of the model is below, enough to set up the call. The vignette *Model and estimation* is the longer technical account. `citation("attitudedyn")` gives the paper and the replication package. The project site is <https://gabrielgggg.github.io/NepaulSternAttitudes/>.
+The worked example is the General Social Survey (GSS) application. Nepaul and Stern (2026) discuss what those estimates mean. A short account of the model is below, enough to set up the call. The vignette *Model and estimation* is the longer technical account. `citation("attitudedyn")` gives the paper and the replication package. The project site is <https://nepaulstern.github.io/>.
 
 The GSS numbers printed here were stored when the guide was prepared. Rebuilding the guide reads that stored output. It does not estimate the survey again.
 
@@ -403,7 +403,7 @@ The draws are Philox values keyed by the seed, the person index, and the draw. T
 
 # Further reading
 
-The vignette *Model and estimation* writes the recursion, the cuts, the simulated likelihood, and the four standard-error calculations. The vignette *Replicating the GSS application* is the map from the replication file to this sample. Nepaul and Stern (2026) discuss the GSS estimates. The project site is <https://gabrielgggg.github.io/NepaulSternAttitudes/>.
+The vignette *Model and estimation* writes the recursion, the cuts, the simulated likelihood, and the four standard-error calculations. The vignette *Replicating the GSS application* is the map from the replication file to this sample. Nepaul and Stern (2026) discuss the GSS estimates. The project site is <https://nepaulstern.github.io/>.
 
 ```{r}
 citation("attitudedyn")

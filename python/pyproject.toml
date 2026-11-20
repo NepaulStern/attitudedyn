@@ -16,8 +16,8 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
 license-files = ["LICENSE"]
-authors = [{ name = "Gabriel Mihalache", email = "mihalache@gmail.com" }]
-maintainers = [{ name = "Gabriel Mihalache", email = "mihalache@gmail.com" }]
+authors = [{ name = "Gabriel Mihalache", email = "mihalache.2@osu.edu" }]
+maintainers = [{ name = "Gabriel Mihalache", email = "mihalache.2@osu.edu" }]
 dependencies = [
   "numpy>=1.23",
   "scipy>=1.9",
@@ -47,8 +47,8 @@ classifiers = [
 test = ["pytest>=7"]
 
 [project.urls]
-Homepage = "https://gabrielgggg.github.io/NepaulSternAttitudes/"
-Documentation = "https://gabrielgggg.github.io/NepaulSternAttitudes/"
+Homepage = "https://nepaulstern.github.io/"
+Documentation = "https://nepaulstern.github.io/"
 Repository = "https://github.com/gabrielgggg/attitudedyn"
 Issues = "https://github.com/gabrielgggg/attitudedyn/issues"
 Changelog = "https://github.com/gabrielgggg/attitudedyn/blob/master/notes/ROADMAP.md"

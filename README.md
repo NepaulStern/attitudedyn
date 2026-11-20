@@ -4,7 +4,7 @@
 
 The same estimates are available from R and from Python.
 
-The project site is <https://gabrielgggg.github.io/NepaulSternAttitudes/>.
+The project site is <https://nepaulstern.github.io/>.
 
 ## Install
 
