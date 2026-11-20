@@ -205,6 +205,38 @@ print.summary.attitudedyn <- function(x, ...) {
 #' @export
 formula.attitudedyn <- function(x, ...) x$formula
 
+#' Predicted Likert probabilities for each person-wave
+#'
+#' Averages structural paths from the fitted model. Each path uses the
+#' person's covariates, factors, and lagged latent attitude. The category
+#' probability on a path is the normal interval probability around that
+#' latent value, and the reported probability is the average across paths.
+#' The same routine supplies `type = "class"` and `type = "latent"`.
+#'
+#' @param object A fitted [attitudedyn()] model.
+#' @param type `"prob"` returns category probabilities. `"class"` returns
+#'   the category with the largest probability. `"latent"` returns the
+#'   average latent attitude before the innovation is added.
+#' @param n_draws Number of structural paths per person. The default is
+#'   `max(20, object$draws)`. These paths are not the likelihood draws.
+#' @param seed Generator seed. The default is the fit seed plus one, so a
+#'   later call with the same seed repeats the probabilities.
+#' @param ... Unused. Included so the method matches [stats::predict()].
+#' @return For `"prob"`, a named list of data frames, one per attitude.
+#'   Each row is a person-wave from that person's first wave through the
+#'   last, including a skipped wave inside the window, and the columns
+#'   `p1` through `pK` are the probabilities of categories 1 through K.
+#'   For `"class"`, a data frame with one integer column per attitude.
+#'   For `"latent"`, a data frame with one numeric column per attitude.
+#' @examples
+#' panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+#' fit <- attitudedyn(
+#'   cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+#'   n_factors = 1, draws = 2,
+#'   control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+#' )
+#' head(predict(fit, type = "prob", n_draws = 2)$y1)
+#' head(predict(fit, type = "class", n_draws = 2))
 #' @export
 predict.attitudedyn <- function(object, type = c("prob", "class", "latent"),
                                 n_draws = NULL, seed = NULL, ...) {
@@ -220,14 +252,6 @@ predict.attitudedyn <- function(object, type = c("prob", "class", "latent"),
   J <- inputs$n_attitudes
   T <- inputs$n_waves
   Kmax <- prediction$max_categories
-  ids <- list()
-  waves <- list()
-  for (i in seq_along(inputs$person_ids)) {
-    if (inputs$last_wave[i] < inputs$first_wave[i]) next
-    span <- (inputs$first_wave[i] + 1L):(inputs$last_wave[i] + 1L)
-    ids[[length(ids) + 1L]] <- rep(inputs$person_ids[i], length(span))
-    waves[[length(waves) + 1L]] <- inputs$wave_values[span]
-  }
   # The C++ array includes every wave for every person, including people and
   # waves outside the window. Rebuild the long index in that same order.
   id_out <- integer(0)
@@ -304,6 +328,31 @@ fitted.attitudedyn <- function(object, ...) {
   observed
 }
 
+#' Draw panels from a fitted attitude model
+#'
+#' Draws covariates and ordinal outcomes from the structural model at the
+#' fitted coefficients. Intercept columns are filled with ones and the other
+#' covariates are standard normal. This is a new panel of the same size as
+#' the estimation sample, not a resample of its rows.
+#'
+#' @param object A fitted [attitudedyn()] model.
+#' @param nsim Number of panels.
+#' @param seed Seed of the first panel. Later panels use the following
+#'   integers. The default is the fit seed plus 17. The seed does not change
+#'   R's random-number generator.
+#' @param ... Unused. Included so the method matches [stats::simulate()].
+#' @return A data frame when `nsim` is 1, and a list of data frames
+#'   otherwise. Columns are `id`, `wave`, `time`, the covariates other than
+#'   the intercept, and the outcomes. Category 1 is the lowest category.
+#'   The frame can be passed back to [attitudedyn()].
+#' @examples
+#' panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+#' fit <- attitudedyn(
+#'   cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+#'   n_factors = 1, draws = 2,
+#'   control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+#' )
+#' head(simulate(fit, nsim = 1, seed = 2))
 #' @export
 simulate.attitudedyn <- function(object, nsim = 1, seed = NULL, ...) {
   if (is.null(seed)) seed <- object$control$seed + 17
@@ -347,6 +396,17 @@ simulate.attitudedyn <- function(object, nsim = 1, seed = NULL, ...) {
 #'   errors. Threshold rows on the natural scale are the cutpoints; their
 #'   standard errors stay on the unconstrained scale.
 #' @param ... Unused.
+#' @return `tidy()` returns a data frame with one row per free coefficient.
+#'   `glance()` returns a one-row data frame of fit statistics.
+#' @examples
+#' panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+#' fit <- attitudedyn(
+#'   cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+#'   n_factors = 1, draws = 2,
+#'   control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "opg")
+#' )
+#' tidy(fit)
+#' glance(fit)
 #' @exportS3Method broom::tidy
 tidy.attitudedyn <- function(x, conf.int = FALSE, conf.level = 0.95,
                              scale = c("unconstrained", "natural"), ...) {

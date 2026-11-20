@@ -3,7 +3,7 @@
 // This file translates NumPy arrays into the types declared in
 // attitudedyn/api.hpp and copies the results back. The likelihood, the
 // analytic gradient, the draws, and the post-estimation routines are the
-// functions in core/. Nothing here reimplements them.
+// functions in src/core/. Nothing here reimplements them.
 
 #include "attitudedyn/api.hpp"
 
@@ -233,7 +233,7 @@ py::dict pack_panel(const attitudedyn::SimulatedPanel& panel) {
 PYBIND11_MODULE(_core, module) {
   module.doc() =
       "Binding to the shared attitudedyn C++ core. "
-      "The numerical work is implemented in core/; this module only moves arrays across the boundary.";
+      "The numerical work is implemented in src/core/; this module only moves arrays across the boundary.";
 
   module.def(
       "layout",

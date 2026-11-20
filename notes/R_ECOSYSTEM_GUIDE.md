@@ -19,8 +19,8 @@ After that, `library(attitudedyn)` works in any R session. You do not need to st
 - `DESCRIPTION` is the package's identity card: name, version, author, licence, and which other packages it needs. R refuses to install a package whose `DESCRIPTION` is missing a required field.
 - `NAMESPACE` is the list of names the package offers to users, and the names it borrows from other packages. It is generated. Do not edit it by hand.
 - `R/` is the R code users call: `attitudedyn()`, the print and summary methods, simulation, and the post-estimation helpers.
-- `src/` is the thin C++ file that translates R vectors into the core's C++ types and back. `Makevars` tells the compiler to use C++17 and to look in `core/`.
-- `core/` is the C++ library. It includes only the C++ standard library. A Python or Stata wrapper can link the same files.
+- `src/` holds the thin C++ file that translates R vectors into the core's C++ types and back, and `src/core/`, the C++ library. `Makevars` tells the compiler to use C++17 and to look in `src/core/`.
+- `src/core/` includes only the C++ standard library. A Python or Stata wrapper can link the same files.
 - `man/` is the help pages. `?attitudedyn` reads these. They are generated from the comments above each function.
 - `tests/testthat/` is the R test suite.
 - `vignettes/` are the long-form articles. They are rebuilt when the package is checked.
@@ -55,5 +55,5 @@ R CMD check --as-cran attitudedyn_0.1.0.tar.gz
 The C++ core has its own test, separate from R:
 
 ```bash
-make -C core test
+make -C src/core test
 ```

@@ -21,3 +21,12 @@ The response at horizon 0 is the identity. Later horizons are powers of the
 natural persistence matrix, which is the recursion over a gap of one time
 unit. The path is that of a one-time innovation to the latent attitude.
 }
+\examples{
+panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+fit <- attitudedyn(
+  cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+  n_factors = 1, draws = 2,
+  control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+)
+impulse_response(fit, horizon = 2)
+}

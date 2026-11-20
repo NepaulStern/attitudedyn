@@ -29,7 +29,21 @@ standard errors stay on the unconstrained scale.}
 
 \item{...}{Unused.}
 }
+\value{
+\code{tidy()} returns a data frame with one row per free coefficient.
+\code{glance()} returns a one-row data frame of fit statistics.
+}
 \description{
 \code{tidy()} returns one row per unconstrained coefficient. \code{glance()} returns
 one row of fit statistics. Both follow the column names used by broom.
+}
+\examples{
+panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+fit <- attitudedyn(
+  cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+  n_factors = 1, draws = 2,
+  control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "opg")
+)
+tidy(fit)
+glance(fit)
 }

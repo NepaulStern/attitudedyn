@@ -1,6 +1,6 @@
 # attitudedyn
 
-R package for the dynamic ordered-probit model of ordinal panel attitudes in Nepaul and Stern (2026, *Political Analysis*). The likelihood is a GHK simulated likelihood. The numerical work lives in a dependency-free C++ library under `core/`; the R package is a wrapper around it.
+R package for the dynamic ordered-probit model of ordinal panel attitudes in Nepaul and Stern (2026, *Political Analysis*). The likelihood is a GHK simulated likelihood. The numerical work lives in a dependency-free C++ library under `src/core/`; the R package is a wrapper around it.
 
 `attitudedyn` reimplements the authors' replication package in C++ and R. The same C++ core is wrapped for Python under `python/`; see `notes/PYTHON_GUIDE.md`. The latent attitude persists from wave to wave.
 

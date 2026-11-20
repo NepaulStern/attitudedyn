@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Assemble a wheel-build tree that contains the Python project and the C++ core.
 
-``pip install ./python`` finds the core at ``../core``. cibuildwheel packs one
-directory into an sdist, so this script copies the Python project and places
-that core at ``./core`` inside ``wheel-stage/``. Wheel tests still read the
-GSS files from the checkout.
+``pip install ./python`` finds the core at ``../src/core``. cibuildwheel packs
+one directory into an sdist, so this script copies the Python project and
+places that core at ``./core`` inside ``wheel-stage/``. Wheel tests still
+read the GSS files from the checkout.
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ from pathlib import Path
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 PYTHON_SOURCE = REPOSITORY_ROOT / "python"
-CORE_SOURCE = REPOSITORY_ROOT / "core"
+CORE_SOURCE = REPOSITORY_ROOT / "src" / "core"
 STAGE_ROOT = REPOSITORY_ROOT / "wheel-stage"
 SKIPPED_DIRECTORY_NAMES = {
     "__pycache__",

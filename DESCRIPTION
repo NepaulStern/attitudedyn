@@ -24,10 +24,11 @@ LinkingTo: Rcpp
 Suggests:
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown
+    rmarkdown,
+    spelling
 Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
 SystemRequirements: C++17
-URL: https://doi.org/10.1017/pan.2026.10034
+URL: https://doi.org/10.1017/pan.2026.10034, https://doi.org/10.7910/DVN/DUCHYS
 Config/roxygen2/version: 8.1.1

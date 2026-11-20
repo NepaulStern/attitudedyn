@@ -18,7 +18,7 @@ That command needs Python 3.10 or newer, a C++17 compiler, and CMake. On
 macOS the compiler is Apple clang. OpenMP is not required and is not used.
 On Windows the compiler is MSVC. `pip` builds a wheel with
 `scikit-build-core` and pybind11, and the wheel links the sources in
-`core/` directly. R is not installed and not imported.
+`src/core/` directly. R is not installed and not imported.
 
 The Python dependencies are NumPy, SciPy, and pandas. Tests additionally
 need pytest:
@@ -31,15 +31,15 @@ python -m pytest python/tests
 ## What each file is
 
 - `python/pyproject.toml` names the package and the build backend.
-- `python/CMakeLists.txt` compiles `core/src/*.cpp` together with
+- `python/CMakeLists.txt` compiles `src/core/src/*.cpp` together with
   `python/src/bindings.cpp`. The binding copies arrays into the types
-  declared in `core/include/attitudedyn/api.hpp` and copies results back.
+  declared in `src/core/include/attitudedyn/api.hpp` and copies results back.
 - `python/src/attitudedyn/` is the code a user imports: `fit`, the result
   object, simulation, and the GSS reader.
 - `python/tests/` is the pytest suite.
 - `python/validation/run_gss.py` evaluates the GSS application.
 
-`core/` itself is unchanged by the wrapper. The R package and
+`src/core/` itself is unchanged by the wrapper. The R package and
 `R CMD check` do not see `python/`, because `.Rbuildignore` excludes it.
 
 ## How a fit runs
