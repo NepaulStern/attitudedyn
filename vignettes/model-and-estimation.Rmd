@@ -11,7 +11,7 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-This note describes the model that `attitudedyn` evaluates. The numerical work is the C++ library under `core/`. The R functions pass it a long panel and the unconstrained coefficients.
+This note describes the model that `attitudedyn` evaluates. The numerical work is the C++ library under `src/core/`. The R functions pass it a long panel and the unconstrained coefficients.
 
 ```{r}
 library(attitudedyn)

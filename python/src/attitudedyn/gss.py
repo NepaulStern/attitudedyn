@@ -71,12 +71,12 @@ _NUMBER = re.compile(r"-?[0-9]+\.[0-9]+")
 
 
 def repository_root() -> Path:
-    """Return the checkout that contains ``core/`` and the GSS file."""
+    """Return the checkout that contains ``src/core`` and the GSS file."""
     starts = [Path.cwd(), Path(__file__).resolve()]
     for origin in starts:
         for candidate in [origin, *origin.parents]:
             data = candidate / "validation" / "fortran" / "data" / "gss2.prn"
-            core = candidate / "core" / "include" / "attitudedyn" / "api.hpp"
+            core = candidate / "src" / "core" / "include" / "attitudedyn" / "api.hpp"
             if data.exists() and core.exists():
                 return candidate
     raise FileNotFoundError(

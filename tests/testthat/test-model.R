@@ -22,7 +22,7 @@ test_that("bad inputs are rejected with a useful error", {
   broken <- panel
   broken$x[1] <- Inf
   expect_error(
-    attitudedyn(cbind(y1, y2) ~ x, data = broken, id = ~ id, wave = ~ wave),
+    attitudedyn(cbind(y1, y2) ~ x, data = broken, id = ~ id, wave = ~ wave, time = ~ time),
     "covariate"
   )
 })

@@ -3,7 +3,7 @@
 Python interface to the dynamic ordered-probit model in Nepaul and Stern
 (2026, *Political Analysis*). The likelihood is the GHK simulated likelihood
 from the authors' replication package. The numerical work is the C++17
-library in `../core/`; this directory is a wrapper around that library and
+library in `../src/core/`; this directory is a wrapper around that library and
 does not reimplement it. There is no R dependency.
 
 ## Install
@@ -14,7 +14,7 @@ A C++17 compiler and CMake are required. From a checkout of the repository:
 pip install ./python
 ```
 
-`pip` compiles `core/` with `scikit-build-core` and pybind11. The same
+`pip` compiles `src/core/` with `scikit-build-core` and pybind11. The same
 sources build with Apple clang (OpenMP is not used) and with MSVC. Person
 contributions are summed with the core's `std::thread` pool. The `threads`
 argument changes the speed and not the value.

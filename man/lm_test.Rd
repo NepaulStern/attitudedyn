@@ -22,3 +22,12 @@ tested are fixed at the null value, and the remaining free coefficients are
 at the restricted maximum. The statistic is the Lagrange-multiplier form
 \verb{s2' (G^\{-1\})_\{22\} s2} using the outer product of the person scores.
 }
+\examples{
+panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)
+restricted <- attitudedyn(
+  cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+  n_factors = 1, draws = 2, fix = c("beta[y1,x]" = 0),
+  control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+)
+suppressWarnings(lm_test(restricted, "beta[y1,x]"))
+}

@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.15...3.28)
 project(attitudedyn_python LANGUAGES CXX)
 
 # The extension is a binding. The likelihood, gradient, draws, and
-# post-estimation all come from the shared C++17 library in ../core.
+# post-estimation all come from the shared C++17 library in ../src/core.
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -11,7 +11,7 @@ if(NOT DEFINED SKBUILD_PLATLIB_DIR)
   message(FATAL_ERROR "This CMake project is meant to be configured by scikit-build-core (pip install ./python).")
 endif()
 
-set(ATTDYN_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../core")
+set(ATTDYN_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../src/core")
 if(NOT EXISTS "${ATTDYN_CORE_DIR}/include/attitudedyn/api.hpp")
   message(FATAL_ERROR
     "The attitudedyn C++ core was not found at ${ATTDYN_CORE_DIR}. "
