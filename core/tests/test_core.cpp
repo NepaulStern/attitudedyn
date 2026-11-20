@@ -242,6 +242,53 @@ int main() {
   const Evaluation infinite_eval = evaluate_full(small_problem, extreme_theta, extreme_value);
   check(!std::isfinite(infinite_eval.objective), "non-finite persistence is a non-finite objective");
 
+  // One attitude, times 0, 1, 3, persistence 0.5, wave effects 0, 1, 3.
+  // The single person contributes waves 2 and 3 to the moments (values 1 and
+  // 3, variance 1). The shock contribution is 1.25: the product that uses
+  // the never-written first-wave transition is zero, and the one-step
+  // product at the second wave is 0.5^2.
+  ModelSpec decomposition_spec;
+  decomposition_spec.n_waves = 3;
+  decomposition_spec.n_attitudes = 1;
+  decomposition_spec.n_covariates = 1;
+  decomposition_spec.n_factors = 0;
+  decomposition_spec.n_categories = {2};
+  decomposition_spec.wave_time = {0.0, 1.0, 3.0};
+  decomposition_spec.include_wave_effects = true;
+  decomposition_spec.fix_intercepts = true;
+  decomposition_spec.intercept_columns = {0};
+  decomposition_spec.attitude_names = {"item"};
+  decomposition_spec.covariate_names = {"(Intercept)"};
+  Problem decomposition;
+  decomposition.spec = decomposition_spec;
+  decomposition.layout = make_layout(decomposition_spec);
+  check(decomposition.layout.n_full == 5, "variance-decomposition layout");
+  decomposition.theta_full = {0.0, 1.0, 3.0, 0.0, std::log(3.0)};
+  Person decomposition_person = make_person(3, 1, 1, {1, 1, 1}, {1.0, 1.0, 1.0});
+  decomposition_person.interviewed[1] = 0;
+  decomposition.persons.push_back(decomposition_person);
+  const VarianceComponent one_person = variance_decomposition(decomposition, decomposition.theta_full);
+  check_near(one_person.covariate[0], 1.0, 1e-12, "x-beta variance includes the wave effect");
+  check_near(one_person.wave_effect[0], 1.0, 1e-12, "wave-effect variance");
+  check_near(one_person.factor[0], 0.0, 1e-12, "no factor");
+  check_near(one_person.shock[0], 1.25, 1e-12, "finite-horizon shock contribution");
+  check_near(one_person.total[0], 3.25, 1e-12, "variance total");
+
+  // A later-starting person who is stored first leaves the early transition
+  // at zero, so that person's shock contribution stays 1. Reversing the
+  // order fills the transition before it is read.
+  Person later_person = make_person(3, 1, 1, {1, 1, 1}, {1.0, 1.0, 1.0});
+  later_person.first_wave = 1;
+  Problem later_first = decomposition;
+  later_first.persons = {later_person, decomposition_person};
+  const VarianceComponent later_first_parts = variance_decomposition(later_first, later_first.theta_full);
+  check_near(later_first_parts.shock[0], 1.125, 1e-12, "early transition stays zero until visited");
+  check_near(later_first_parts.covariate[0], 8.0 / 9.0, 1e-12, "pooled x-beta variance");
+  Problem early_first = decomposition;
+  early_first.persons = {decomposition_person, later_person};
+  const VarianceComponent early_first_parts = variance_decomposition(early_first, early_first.theta_full);
+  check_near(early_first_parts.shock[0], 1.25, 1e-12, "a full window fills the transition for the next person");
+
   const ImpulseResponse irf = impulse_response(
       natural_parameters(small_problem.spec, small_problem.theta_full).persistence, 2, 4);
   check(irf.response.size() == 5u * 4u, "irf length");

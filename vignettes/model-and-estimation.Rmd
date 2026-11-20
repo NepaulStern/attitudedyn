@@ -1,0 +1,49 @@
+---
+title: "Model and estimation"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Model and estimation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+This note describes the model that `attitudedyn` evaluates. The numerical work is the C++ library under `core/`. The R functions pass it a long panel and the unconstrained coefficients.
+
+```{r}
+library(attitudedyn)
+attitudedyn_control(n_threads = 1, draw_type = "philox", maxit = 0)
+```
+
+## Latent attitude
+
+Person `i` has a latent value for each attitude `j` in wave `t`. On a wave inside that person's window the latent value is
+
+```
+latent = covariate index + wave effect + factor index + lagged latent + innovation
+```
+
+The covariate index is `x beta`. A full set of wave effects is included by default, and each attitude's intercept is then fixed at zero because a cutpoint is already normalised at zero. The factor index is a loading times a standard normal person factor. The factor does not change across waves. With two or more factors the loading of the last attitude on the last factor is fixed at zero.
+
+The lagged latent is the persistence matrix times the previous latent attitude. Each entry of that matrix is raised to the gap between the two wave dates before it multiplies the lag: `sign(rho) * |rho|^gap`. The gap is the difference of `time_grid`, or of the common date in each wave. A wave the person skipped, and an item that is missing, is still stepped forward. It does not add a term to the likelihood.
+
+The innovation is standard normal. The published specification keeps the innovations uncorrelated within a wave. A free contemporaneous correlation is available and has no analytic gradient.
+
+## Ordered categories
+
+An observed category is an interval of the latent attitude. The cut below category 1 is -100, the cut between category 1 and category 2 is 0, and the cut above the last category is 100. Each free cut above that is the previous cut plus a positive increment. The reported coefficient is the log of the increment.
+
+## Simulated likelihood
+
+The likelihood is a Geweke-Hajivassiliou-Keane average. For each person and each draw the routine walks the waves in order. An observed item contributes the log probability of its interval, given the covariate index, the wave effect, the factor, and the lagged latent. The latent state passed to the next wave is a draw from the normal truncated to that interval. A missing item contributes nothing and passes on an untruncated normal draw. With an identity contemporaneous correlation the attitudes in one wave are not conditioned on each other. The person contribution is the average of these paths, and the sample objective is the weighted sum of the person contributions.
+
+The default draws are Philox, a counter-based generator. The counter is keyed by the person, the draw, and the stream, so two people do not share a sequence and the result does not depend on the order of the people. `antithetic = TRUE` pairs each draw with its sign flip. `draws` counts the pairs, not the paths. `halton` and `sobol` are Owen-scrambled quasi-random sequences with the same keying.
+
+`n_threads` splits the person loop across threads and adds the contributions afterwards. The log-likelihood and the gradient do not change with the thread count. The default is one thread.
+
+## Estimation
+
+The optimiser sees unconstrained coefficients. A persistence coefficient `c` enters the recursion as `2 exp(c) / (1 + exp(c)) - 1`, which lies in (-1, 1). BFGS uses the analytic gradient and the same iteration as `stats::optim(method = "BFGS")`. `maxit = 0` evaluates the starting values and returns. The outer-product covariance inverts the person-score cross product. `opg_centered` subtracts the mean score first, which is the covariance printed with the replication estimates.

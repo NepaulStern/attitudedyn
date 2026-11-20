@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <limits>
 #include <stdexcept>
 
 namespace attitudedyn {
@@ -141,17 +140,18 @@ InfluenceShares influence_shares(const std::vector<double>& persistence_row_majo
 
 namespace {
 
-double sample_variance(const std::vector<double>& values) {
-  if (values.size() < 2) return 0.0;
-  double mean = 0.0;
-  for (double v : values) mean += v;
-  mean /= static_cast<double>(values.size());
-  double sse = 0.0;
-  for (double v : values) {
-    const double d = v - mean;
-    sse += d * d;
-  }
-  return sse / static_cast<double>(values.size());
+// sign(rho) * |rho|^gap, the transition preplik12 stores in rhop.
+double gap_scaled_persistence(double persistence, double gap) {
+  if (persistence == 0.0) return 0.0;
+  return std::copysign(std::pow(std::fabs(persistence), gap), persistence);
+}
+
+// Second moment minus the squared mean. The divisor is the number of
+// person-waves, including a sample of size one, which then has variance 0.
+double population_variance(double count, double sum, double sum_of_squares) {
+  if (count <= 0.0) return 0.0;
+  const double mean = sum / count;
+  return sum_of_squares / count - mean * mean;
 }
 
 }  // namespace
@@ -159,54 +159,114 @@ double sample_variance(const std::vector<double>& values) {
 VarianceComponent variance_decomposition(const Problem& problem, const std::vector<double>& theta_full) {
   const std::vector<int> no_gradient(theta_full.size(), -1);
   const detail::Unpacked unpacked = detail::unpack(problem.spec, theta_full, no_gradient);
-  const int J = problem.spec.n_attitudes;
+  const int n_attitudes = problem.spec.n_attitudes;
+  const int n_waves = problem.spec.n_waves;
   VarianceComponent out;
-  out.covariate.assign(J, 0.0);
-  out.wave_effect.assign(J, 0.0);
-  out.factor.assign(J, 0.0);
-  out.shock.assign(J, std::numeric_limits<double>::quiet_NaN());
-  out.total.assign(J, 0.0);
-  std::vector<std::vector<double>> xb(J), delta(J);
-  for (const Person& person : problem.persons) {
-    if (person.last_wave < person.first_wave) continue;
-    for (int wave = person.first_wave; wave <= person.last_wave; ++wave) {
-      if (!person.interviewed[wave]) continue;
-      for (int attitude = 0; attitude < J; ++attitude) {
-        double systematic = 0.0;
-        const double* x = person.covariates.data() + static_cast<std::size_t>(wave) * unpacked.n_covariates;
-        const double* beta = unpacked.beta.data() + static_cast<std::size_t>(attitude) * unpacked.n_covariates;
-        for (int column = 0; column < unpacked.n_covariates; ++column) systematic += beta[column] * x[column];
-        xb[attitude].push_back(systematic);
-        double wave_effect = 0.0;
-        if (problem.spec.include_wave_effects) {
-          wave_effect = unpacked.wave_effect[attitude * unpacked.n_waves + wave];
-        }
-        delta[attitude].push_back(wave_effect);
-      }
-    }
-  }
-  for (int attitude = 0; attitude < J; ++attitude) {
-    out.covariate[attitude] = sample_variance(xb[attitude]);
-    out.wave_effect[attitude] = sample_variance(delta[attitude]);
+  out.covariate.assign(n_attitudes, 0.0);
+  out.wave_effect.assign(n_attitudes, 0.0);
+  out.factor.assign(n_attitudes, 0.0);
+  out.shock.assign(n_attitudes, 0.0);
+  out.total.assign(n_attitudes, 0.0);
+
+  for (int attitude = 0; attitude < n_attitudes; ++attitude) {
     double factor = 0.0;
-    for (int f = 0; f < unpacked.n_factors; ++f) {
-      const double loading = unpacked.loading[f * J + attitude];
+    for (int factor_index = 0; factor_index < unpacked.n_factors; ++factor_index) {
+      const double loading = unpacked.loading[factor_index * n_attitudes + attitude];
       factor += loading * loading;
     }
     out.factor[attitude] = factor;
   }
-  const InfluenceShares shares = influence_shares(unpacked.rho, J);
-  if (!shares.stationary) {
-    out.note = "The persistence matrix is not stationary, so the long-run shock variance is not finite.";
-  } else {
-    out.shock = shares.long_run_variance;
-    out.note = "Shock variance is the long-run variance of the recursion state = R * state_lag + innovation, "
-               "with innovation covariance equal to the identity.";
+
+  // x-beta and delta are pooled over waves after each included person's
+  // first observed wave, through the last wave. A gap inside that window
+  // is kept. The covariate piece is the wave effect plus x beta.
+  std::vector<double> covariate_count(n_attitudes, 0.0);
+  std::vector<double> covariate_sum(n_attitudes, 0.0);
+  std::vector<double> covariate_sum_of_squares(n_attitudes, 0.0);
+  std::vector<double> wave_count(n_attitudes, 0.0);
+  std::vector<double> wave_sum(n_attitudes, 0.0);
+  std::vector<double> wave_sum_of_squares(n_attitudes, 0.0);
+
+  // rhop(to, from, wave) is filled only for a destination wave some earlier
+  // included person has already visited. Slots that have not been visited
+  // stay zero, and people are taken in stored order. Wave 0 is never a
+  // destination, so its slot stays zero.
+  std::vector<double> scaled_persistence(static_cast<std::size_t>(n_attitudes * n_attitudes * n_waves), 0.0);
+  std::vector<double> shock_sum(n_attitudes, 0.0);
+  double included_people = 0.0;
+
+  for (const Person& person : problem.persons) {
+    if (!(person.weight > 0.0) || person.last_wave < person.first_wave) continue;
+    const int first_wave_number = person.first_wave + 1;
+    const int last_wave_number = person.last_wave + 1;
+    for (int destination = first_wave_number + 1; destination <= last_wave_number; ++destination) {
+      const double gap = problem.spec.wave_time[destination - 1] - problem.spec.wave_time[destination - 2];
+      for (int receiving = 0; receiving < n_attitudes; ++receiving) {
+        for (int source = 0; source < n_attitudes; ++source) {
+          const std::size_t slot =
+              (static_cast<std::size_t>(receiving) * n_attitudes + source) * n_waves + (destination - 1);
+          scaled_persistence[slot] =
+              gap_scaled_persistence(unpacked.rho[receiving * n_attitudes + source], gap);
+        }
+      }
+    }
+
+    ++included_people;
+    for (int receiving = 0; receiving < n_attitudes; ++receiving) {
+      double shock_contribution = 1.0;
+      for (int destination = first_wave_number + 1; destination <= last_wave_number; ++destination) {
+        const int previous = destination - 1;
+        for (int origin = 1; origin <= previous; ++origin) {
+          for (int source = 0; source < n_attitudes; ++source) {
+            double product = 1.0;
+            for (int step = origin; step <= previous; ++step) {
+              const std::size_t slot =
+                  (static_cast<std::size_t>(receiving) * n_attitudes + source) * n_waves + (step - 1);
+              product *= scaled_persistence[slot];
+            }
+            shock_contribution += product * product;
+          }
+        }
+      }
+      shock_sum[receiving] += shock_contribution;
+    }
+
+    for (int wave = person.first_wave + 1; wave <= person.last_wave; ++wave) {
+      const double* covariates = person.covariates.data() + static_cast<std::size_t>(wave) * unpacked.n_covariates;
+      for (int attitude = 0; attitude < n_attitudes; ++attitude) {
+        double wave_effect = 0.0;
+        if (problem.spec.include_wave_effects) {
+          wave_effect = unpacked.wave_effect[attitude * n_waves + wave];
+        }
+        const double* coefficients = unpacked.beta.data() + static_cast<std::size_t>(attitude) * unpacked.n_covariates;
+        double covariate_index = wave_effect;
+        for (int column = 0; column < unpacked.n_covariates; ++column) {
+          covariate_index += coefficients[column] * covariates[column];
+        }
+        covariate_count[attitude] += 1.0;
+        covariate_sum[attitude] += covariate_index;
+        covariate_sum_of_squares[attitude] += covariate_index * covariate_index;
+        wave_count[attitude] += 1.0;
+        wave_sum[attitude] += wave_effect;
+        wave_sum_of_squares[attitude] += wave_effect * wave_effect;
+      }
+    }
   }
-  for (int attitude = 0; attitude < J; ++attitude) {
-    const double shock = std::isfinite(out.shock[attitude]) ? out.shock[attitude] : 0.0;
-    out.total[attitude] = out.covariate[attitude] + out.wave_effect[attitude] + out.factor[attitude] + shock;
+
+  for (int attitude = 0; attitude < n_attitudes; ++attitude) {
+    out.covariate[attitude] =
+        population_variance(covariate_count[attitude], covariate_sum[attitude], covariate_sum_of_squares[attitude]);
+    out.wave_effect[attitude] =
+        population_variance(wave_count[attitude], wave_sum[attitude], wave_sum_of_squares[attitude]);
+    out.shock[attitude] = (included_people > 0.0) ? shock_sum[attitude] / included_people : 0.0;
+    out.total[attitude] =
+        out.covariate[attitude] + out.wave_effect[attitude] + out.factor[attitude] + out.shock[attitude];
   }
+  out.note =
+      "covariate is the variance of the wave effect plus the covariate index, wave_effect is the "
+      "variance of the wave effect, factor is the sum of squared loadings, and shock is the average "
+      "over included people of the finite-horizon persistence contribution. Both variances use every "
+      "wave after a person's first observed wave through the last wave.";
   return out;
 }
 

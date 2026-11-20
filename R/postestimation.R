@@ -97,12 +97,18 @@ influence_shares <- function(object) {
 
 #' Variance decomposition of the latent attitude
 #'
-#' Splits the latent scale into the sample variance of the covariates, the
-#' sample variance of the wave effects, the factor contribution (the sum of
-#' squared loadings), and the long-run variance of the persistent innovation.
+#' Reports the four pieces printed by the replication program. `covariate`
+#' is the variance of the wave effect plus the covariate index. `wave_effect`
+#' is the variance of the wave effect on its own. `factor` is the sum of
+#' squared loadings. `shock` averages, across included people, the
+#' finite-horizon contribution built from the gap-scaled persistence
+#' coefficients. Both variances use every wave after a person's first
+#' observed wave through that person's last wave, including a wave with no
+#' interview. The divisor is the number of person-waves.
 #'
 #' @param object A fitted model.
-#' @return A data frame with one row per attitude.
+#' @return A data frame with one row per attitude. `total` is the sum of the
+#'   four pieces. A `note` attribute describes the columns.
 #' @export
 variance_decomposition <- function(object) {
   object <- ensure_problem(object)

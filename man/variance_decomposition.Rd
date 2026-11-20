@@ -10,10 +10,16 @@ variance_decomposition(object)
 \item{object}{A fitted model.}
 }
 \value{
-A data frame with one row per attitude.
+A data frame with one row per attitude. \code{total} is the sum of the
+four pieces. A \code{note} attribute describes the columns.
 }
 \description{
-Splits the latent scale into the sample variance of the covariates, the
-sample variance of the wave effects, the factor contribution (the sum of
-squared loadings), and the long-run variance of the persistent innovation.
+Reports the four pieces printed by the replication program.
+\code{covariate} is the variance of the wave effect plus the covariate
+index. \code{wave_effect} is the variance of the wave effect on its own.
+\code{factor} is the sum of squared loadings. \code{shock} averages,
+across included people, the finite-horizon contribution built from the
+gap-scaled persistence coefficients. Both variances use every wave after
+a person's first observed wave through that person's last wave, including
+a wave with no interview. The divisor is the number of person-waves.
 }

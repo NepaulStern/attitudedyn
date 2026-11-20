@@ -31,6 +31,7 @@ class ImpulseResponse:
     """
 
     def __init__(self, response: np.ndarray, spectral_radius: float, attitudes: Sequence[str]) -> None:
+        """Store one impulse-response array and the names of its attitudes."""
         self.response = response
         self.spectral_radius = float(spectral_radius)
         self.attitudes = list(attitudes)
@@ -105,6 +106,7 @@ class AttitudeDynResult:
         optimizer: str,
         maxit: int,
     ) -> None:
+        """Store a fitted model. Prefer :func:`attitudedyn.fit` to calling this directly."""
         self._problem = problem
         self.layout = layout
         self._theta_template = np.asarray(theta_full, dtype=np.float64).copy()
@@ -406,11 +408,16 @@ class AttitudeDynResult:
         }
 
     def variance_decomposition(self) -> pd.DataFrame:
-        """Split the latent scale into covariate, wave, factor, and shock contributions.
+        """Variance decomposition printed by the replication program.
 
-        The shock column is the long-run variance of the recursion
-        ``state = R state_lag + innovation`` with an identity innovation
-        covariance. It is not finite when ``R`` is not stationary.
+        ``covariate`` is the variance of the wave effect plus the covariate
+        index. ``wave_effect`` is the variance of the wave effect on its own.
+        ``factor`` is the sum of squared loadings. ``shock`` averages, across
+        included people, the finite-horizon contribution built from the
+        gap-scaled persistence coefficients. Both variances use every wave
+        after a person's first observed wave through that person's last wave,
+        including a wave with no interview. The divisor is the number of
+        person-waves. ``total`` is the sum of the four pieces.
 
         Returns
         -------

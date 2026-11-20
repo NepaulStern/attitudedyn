@@ -178,16 +178,18 @@ InfluenceShares influence_shares(const std::vector<double>& persistence_row_majo
                                  int n_attitudes);
 
 struct VarianceComponent {
-  std::vector<double> covariate;    // per attitude
-  std::vector<double> wave_effect;
-  std::vector<double> factor;
-  std::vector<double> shock;
+  std::vector<double> covariate;    // variance of wave effect + x beta
+  std::vector<double> wave_effect;  // variance of the wave effect
+  std::vector<double> factor;       // sum of squared loadings
+  std::vector<double> shock;        // person-average finite-horizon contribution
   std::vector<double> total;
   std::string note;
 };
 
-// Sample variances of x beta and of the wave effects, plus ||lambda||^2 and
-// the long-run shock variance.
+// Replication variance decomposition. Moments skip each person's first
+// observed wave and then keep every later wave in the window, including a
+// gap. The shock piece fills gap-scaled persistence in person order and
+// leaves a destination wave at zero until some included person has visited it.
 VarianceComponent variance_decomposition(const Problem& problem,
                                          const std::vector<double>& theta_full);
 
