@@ -1,0 +1,345 @@
+---
+title: "attitudedyn user guide"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{attitudedyn user guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+guide_text <- function(name) {
+  path <- system.file("extdata", name, package = "attitudedyn")
+  cat(paste(readLines(path, warn = FALSE), collapse = "\n"), "\n", sep = "")
+}
+```
+
+`attitudedyn` fits a dynamic ordered-probit model to several ordinal attitudes observed on the same people over several waves. The latent attitude carries forward from wave to wave. The likelihood is a Geweke-Hajivassiliou-Keane simulated likelihood. This guide fits the General Social Survey (GSS) application and reads the output. Nepaul and Stern (2026) discuss what those estimates mean. The model section below is only enough to specify the call. The vignette *Model and estimation* is the longer account, and `citation("attitudedyn")` gives the paper and the replication package.
+
+The results printed here come from the call in [Fitting](#fitting). Rebuilding this guide loads that stored output, so it does not refit the sample.
+
+## Install
+
+The package needs a C++17 compiler.
+
+```{r, eval = FALSE}
+install.packages("attitudedyn")
+
+# from the source directory of a checkout
+install.packages(".", repos = NULL, type = "source")
+```
+
+```{r}
+library(attitudedyn)
+```
+
+## The GSS panel
+
+The estimation data are a long panel: one row is one person in one wave.
+
+| Column | Role |
+| --- | --- |
+| `id` | Person identifier. No missing values. |
+| `wave` | Wave index. No missing values. In the GSS file the indexes are `1` through `8`. |
+| outcomes | Integers `1, ..., K`, or missing. One column per attitude. |
+| covariates | Numeric. Missing covariates are not allowed unless you set `na.action = na.omit`, which drops those person-waves. Missing outcomes stay. |
+| `weight` | Optional. Non-negative and constant within a person. The sample log-likelihood is the weighted sum of the person contributions. |
+
+A checkout of this repository reads the replication file `validation/fortran/data/gss2.prn` with `validation/gss_data.R`. Python reads the same file with `attitudedyn.gss.read_gss`. The loader returns the columns the model uses.
+
+```{r, eval = FALSE}
+source("validation/gss_data.R")
+panel <- read_gss("validation/fortran/data/gss2.prn")
+```
+
+The prepared outcomes are `ideology` (7 categories), `military` (3), `welfare` (3), `immigrants` (5), `party` (7), and `environment` (3). Party is stored as 0 through 6 in the text file and the loader adds 1, so the model sees 1 through 7. The covariates are an intercept column, `age`, `hs`, `college`, `adv`, `female`, `white`, `black`, `inc_mid`, and `inc_high`. The intercept column is 1 on a wave that was in the file and 0 on a wave the loader inserted. Age on an inserted wave is filled from the person's first observed age of at least 16, adding two years per wave index. A category code outside `1, ..., K` is set to missing.
+
+Wave dates are not the survey year. Pass the GSS grid, in the order of the sorted wave indexes:
+
+```{r, eval = FALSE}
+gss_time_grid()
+```
+
+```{r}
+layout <- readRDS(system.file("extdata", "guide_layout.rds", package = "attitudedyn"))
+layout$time_grid
+diff(layout$time_grid)
+```
+
+Wave 1 is date 2, wave 2 is date 3, and so on through wave 7 at date 8 and wave 8 at date 10. The gaps are the exponents on the persistence matrix: seven steps of 1, then a step of 2 between the last two waves. Every person uses this same grid. Do not pass each respondent's own interview date if you want this application.
+
+The panel is unbalanced. Each person contributes the waves from their first observed wave through their last, which in this file is one, two, or three rows. A wave inside that window that was not in the file is still a row. The latent attitude is stepped through it, and it does not add a likelihood term of its own. Item nonresponse is a missing outcome on a row that is otherwise present. The likelihood integrates that item out and still updates the latent state.
+
+```{r}
+c(people_in_file = layout$n_people_file, people_in_likelihood = layout$n_included,
+  rows = layout$n_rows_panel, gap_rows = layout$n_gap_rows)
+data.frame(rows = layout$names_waves_per_person, people = layout$waves_per_person)
+layout$n_missing
+```
+
+Of the 11,282 people in the file, 11,252 have positive weight and enter the likelihood. The other 30 are kept, with weight 0, in first-appearance order. The simulated draws are keyed by that person position, so dropping the weight-0 rows changes the draws for everyone who follows them. There are 809 inserted gap rows among the people with positive weight.
+
+These rows are from that panel. Person `1001` has several missing items. Person `4001` is interviewed at waves 6 and 8; wave 7 is a gap, with the intercept at 0, the outcomes missing, and age filled in. Person `10032` is one of the weight-0 rows.
+
+```{r}
+excerpt <- readRDS(system.file("extdata", "guide_excerpt.rds", package = "attitudedyn"))
+cols <- c("id", "wave", "weight", "(Intercept)", "age", "female",
+          "ideology", "military", "welfare", "immigrants", "party", "environment")
+excerpt[, cols]
+```
+
+The category counts among people with positive weight, in order from category 1, are the check that the file was read as the loader intends.
+
+```{r}
+layout$category_counts
+```
+
+Your own survey can use the same `attitudedyn()` call once it is in this shape. The outcome codes have to be the integers `1, ..., K` with no skipped code, because the cut between category 1 and category 2 is normalised at zero.
+
+## What the model is
+
+Person `i` has a latent value for each attitude `j` in wave `t`. On a wave inside that person's window
+
+```
+latent = covariate index + wave effect + factor index + lagged latent + innovation
+```
+
+The covariate index is `x beta`. A full set of wave effects is included by default. The factor index is a loading times a standard normal person factor. The factor does not change across waves. The innovation is standard normal. In the specification used here the innovations are uncorrelated within a wave (`contemporaneous = "identity"`).
+
+The lagged latent is the persistence matrix times the previous latent attitude. The optimiser sees an unconstrained coefficient `c`. The recursion uses
+
+```
+rho = 2 * exp(c) / (1 + exp(c)) - 1
+```
+
+which lies in (-1, 1). Each entry is then raised to the gap between the two wave dates, `sign(rho) * abs(rho) ^ gap`, before it multiplies the lag. A skipped wave is still stepped forward.
+
+An observed category is an interval of the latent attitude. The cut below category 1 is -100, the cut between category 1 and category 2 is 0, and the cut above the last category is 100. Each free cut above the zero cut is the previous cut plus a positive increment. The coefficient the optimiser sees is the log of that increment.
+
+The likelihood is a simulated average over latent paths. `draws` is the number of paths before the antithetic pairing. With the default `antithetic = TRUE`, each draw is paired with its sign flip, so the average uses `2 * draws` paths. The default generator is Philox, keyed by the seed, the person, and the draw.
+
+## Specifying the model
+
+The GSS call uses six items, the covariates prepared above, two person factors, and the wave grid.
+
+```{r, eval = FALSE}
+cbind(ideology, military, welfare, immigrants, party, environment) ~
+  0 + `(Intercept)` + age + hs + college + adv + female + white + black +
+  inc_mid + inc_high
+```
+
+The left-hand side is the items, in the order you want them named. The right-hand side is the covariate index, shared in its column layout across attitudes: each attitude has its own coefficients. `0 +` keeps the formula from adding a second intercept. The intercept column already in the data is written `` `(Intercept)` ``.
+
+`n_factors = 2` asks for two person factors. With two or more factors the loading of the last attitude on the last factor is fixed at zero (`fix_last_loading = TRUE`). Here that is `loading[environment,f2]`. Wave effects are on, and each attitude's intercept is then fixed at zero (`fix_intercept = TRUE`), because a cut is already normalised at zero and a full set of wave effects would not be separately identified from a free intercept. `include_wave_effects = FALSE` leaves the intercepts free instead.
+
+A wave effect with no observed responses is fixed at zero and dropped from the free coefficients. In this sample that is `wave_effect[immigrants,1]`: the immigrants item is not observed in wave 1.
+
+`cutpoints()` reports the cuts after the log increments have been expanded. The values -100, 0, and 100 are the normalised anchors. The printed cuts for this fit are below, in the fitting section's stored output.
+
+Names you will see on the free coefficients:
+
+| Block | Name | Scale in `coef()` and `summary()` |
+| --- | --- | --- |
+| Wave effect | `wave_effect[ideology,1]` | The additive wave shift |
+| Covariate | `beta[ideology,age]` | The slope |
+| Persistence | `persistence[ideology,military]` | Unconstrained. Row receives, column is the source. |
+| Loading | `loading[ideology,f1]` | The factor loading |
+| Threshold | `threshold[ideology,3]` | Log of the increment that opens category 3 |
+
+`coef(fit)` is this unconstrained vector. `coef(fit, scale = "natural")` maps persistence onto (-1, 1) and replaces threshold rows with the cutpoints. `fix` holds named coefficients at an unconstrained value and drops them from the free set. `start` is a full set of free starting values, named or in the free-coefficient order `coef()` uses.
+
+If you omit `start`, the diagonal persistence coefficients start at the unconstrained value for 0.3, free loadings start at 0.5, threshold increments start at `log(0.6)`, and every other free coefficient starts at 0. The GSS fit below does not use that default. It starts at the replication coefficients, which are 164 numbers in free-coefficient order.
+
+## Fitting
+
+```{r, eval = FALSE}
+estimates <- read_gss_estimates("validation/fortran/src/gss_log.txt")
+fit <- attitudedyn(
+  cbind(ideology, military, welfare, immigrants, party, environment) ~
+    0 + `(Intercept)` + age + hs + college + adv + female + white + black +
+    inc_mid + inc_high,
+  data = panel,
+  id = ~ id,
+  wave = ~ wave,
+  time_grid = gss_time_grid(),
+  weights = weight,
+  n_factors = 2,
+  draws = 10,
+  start = unname(estimates),
+  control = attitudedyn_control(
+    maxit = 0,
+    n_threads = 4,
+    vcov = "opg_centered",
+    seed = 1
+  )
+)
+```
+
+`id` and `wave` are one-sided formulas or column names. `weights = weight` is evaluated in the data. `draws = 10` and `seed = 1` are the defaults: ten Philox draws, each with its antithetic twin. Use 50 antithetic draws for a new sample. In the recovery exercise reported in `notes/SIMULATION_RECOVERY.md`, 50 draws put Wald coverage of the three covariance estimators between 0.943750 and 0.948958, and 100 draws changed the root mean squared error from 0.041987 to 0.041133 while taking about twice as long. The default of `attitudedyn()`, and this GSS fit, stays at 10 draws and seed 1.
+
+`attitudedyn_control()` is where the search is set.
+
+| Argument | What it does | Default |
+| --- | --- | --- |
+| `maxit` | Optimiser iterations. `0` evaluates `start` and returns. | `200` |
+| `reltol` | Relative tolerance on the log-likelihood, as in `stats::optim()`. | `1e-8` |
+| `optimizer` | `"BFGS"` uses the analytic gradient and the same iteration as `optim(method = "BFGS")`. `"BHHH"` is a scoring step. `"Nelder-Mead"` is derivative-free. | `"BFGS"` |
+| `n_threads` | Threads in the person loop. The result does not depend on this value. | `1` |
+| `seed` | Philox seed. It does not change R's random-number generator. | `1` |
+| `antithetic` | Pair each draw with its sign flip. | `TRUE` |
+| `draw_type` | `"philox"`, `"halton"`, or `"sobol"`. | `"philox"` |
+| `vcov` | Covariance stored with the fit. `"none"` skips it. | `"opg_centered"` |
+| `trace` | If positive, print the log-likelihood at each iteration. | `0` |
+
+The call above is an evaluation of the replication coefficients, not a search. On 4 threads that evaluation takes a few seconds. Lifting the iteration cap and searching from those coefficients took 202.6 seconds in R and 276.3 seconds in Python, both on 4 threads. Both searches stopped with convergence code 0 at log-likelihood -111545.0088160454. The printed results in this guide are the evaluation, at log-likelihood -111570.9702226093.
+
+During the evaluation the fit reports that `wave_effect[immigrants,1]` is fixed at zero. `summary()` then prints `Converged.` because `maxit = 0` returns convergence code 0.
+
+## Reading the summary
+
+`summary(fit)` prints the header, every free coefficient on the unconstrained scale, and the persistence matrix rounded to three decimals. The standard errors are from the covariance stored with the fit, here `opg_centered`. The stars use the normal distribution. The 10% cutoff, printed under the table, is 1.645.
+
+```{r, echo = FALSE, comment = ""}
+guide_text("guide_summary.txt")
+```
+
+The header is the sample log-likelihood, the number of people with positive weight, the number of attitudes and waves, the draw count, the number of free coefficients, and the convergence code. There are 164 free coefficients. The rows run through wave effects, then slopes, persistence, loadings, and threshold increments. `wave_effect[immigrants,1]` is absent because it was fixed.
+
+`glance(fit)` is one row of fit statistics. `tidy(fit)` is one row per free coefficient, which is the same table in a data frame. The first rows are the ideology wave effects.
+
+```{r, echo = FALSE, comment = ""}
+guide_text("guide_glance.txt")
+```
+
+```{r, echo = FALSE, comment = ""}
+guide_text("guide_tidy_head.txt")
+```
+
+The natural persistence matrix in the summary is rounded. The cuts for this fit, including the normalised anchors, are:
+
+```{r, echo = FALSE, comment = ""}
+guide_text("guide_cutpoints.txt")
+```
+
+## Standard errors
+
+`summary()` uses the covariance stored on the fit. The default, `opg_centered`, centres the person scores and inverts their outer product. `vcov(fit)` returns that matrix, and `vcov(fit, type = "opg")` skips the centring. `type = "hessian"` inverts the negative numerical Hessian of the analytic gradient. `type = "sandwich"` is that inverse, times the uncentred outer product of the scores, times the inverse. `summary(fit, vcov_type = "sandwich")` reprints the coefficient table with the covariance you name. The corner of the stored centred outer-product matrix is:
+
+```{r, echo = FALSE, comment = ""}
+guide_text("guide_vcov.txt")
+```
+
+## Persistence and impulse responses
+
+`persistence_matrix()` is the natural scale, in (-1, 1). The row receives the lag. The column is the attitude that is lagged. The entry is the coefficient before it is raised to the gap between waves.
+
+```{r, echo = FALSE, comment = ""}
+guide_text("guide_persistence.txt")
+```
+
+`impulse_response()` raises that matrix to successive powers. Horizon 0 is the identity, the impact of a unit innovation. Later horizons are the response after that many steps of one time unit. The returned list has the array `response`, indexed as horizon, then receiving attitude, then source attitude, and the spectral radius.
+
+```{r, eval = FALSE}
+irf <- impulse_response(fit, horizon = 8)
+irf$spectral_radius
+```
+
+```{r, echo = FALSE}
+irf <- readRDS(system.file("extdata", "guide_irf.rds", package = "attitudedyn"))
+```
+
+```{r}
+irf$spectral_radius
+```
+
+Rows of the figure receive the shock named in the column.
+
+```{r, fig.width = 7.2, fig.height = 6.6, fig.cap = "Rows receive the shock named in the column. Horizon 0 is the impact."}
+response <- irf$response
+attitudes <- dimnames(response)$to
+steps <- seq.int(0, dim(response)[1] - 1L)
+op <- par(mfrow = c(6, 6), mar = c(1.5, 1.5, 0.25, 0.15), oma = c(2.2, 2.6, 1.3, 0.3))
+for (receiver in attitudes) {
+  for (source in attitudes) {
+    series <- response[, receiver, source]
+    plot(steps, series, type = "l", lwd = 1.4, col = "#1f4e79",
+         xlab = "", ylab = "", axes = FALSE, ylim = range(c(0, series)))
+    axis(1, at = c(0, 4, 8), cex.axis = 0.6, padj = -1)
+    if (source == attitudes[1]) axis(2, cex.axis = 0.55, las = 1)
+    abline(h = 0, col = "grey70")
+    if (receiver == attitudes[length(attitudes)]) mtext(source, side = 1, line = 1.15, cex = 0.55)
+    if (source == attitudes[1]) mtext(receiver, side = 2, line = 2.15, cex = 0.55)
+  }
+}
+mtext("Shock to", side = 1, outer = TRUE, line = 1.05, cex = 0.75)
+mtext("Response of", side = 2, outer = TRUE, line = 1.15, cex = 0.75)
+par(op)
+```
+
+## Variance decomposition
+
+`variance_decomposition()` reports four pieces for each latent attitude. `covariate` is the variance of the wave effect plus the covariate index. `wave_effect` is the variance of the wave effect on its own. `factor` is the sum of squared loadings. `shock` is the average, over people in the likelihood, of the finite-horizon contribution built from the gap-scaled persistence coefficients. `total` adds the four. Both variances use every wave after a person's first observed wave through that person's last wave, including a wave with no interview.
+
+```{r, echo = FALSE, comment = ""}
+guide_text("guide_variance.txt")
+```
+
+## Predicted categories and simulated panels
+
+`predict()` averages structural paths at the fitted coefficients. These paths are not the likelihood draws. `type = "prob"` returns, for each attitude, the category probabilities of every person-wave in that person's window. `type = "class"` returns the category with the largest probability. `type = "latent"` returns the average latent attitude before the innovation is added. `n_draws` defaults to `max(20, fit$draws)`. The seed defaults to the fit seed plus one.
+
+The first rows of `predict(fit, type = "class", n_draws = 2, seed = 2)` and of the ideology probabilities from `type = "prob"` with the same arguments are below. The row names are positions in the person-by-wave array, which still contains waves outside a person's window, so they are not consecutive.
+
+```{r, eval = FALSE}
+head(predict(fit, type = "class", n_draws = 2, seed = 2))
+head(predict(fit, type = "prob", n_draws = 2, seed = 2)$ideology)
+```
+
+```{r, echo = FALSE, comment = ""}
+guide_text("guide_predict_class.txt")
+```
+
+```{r, echo = FALSE, comment = ""}
+guide_text("guide_predict_prob.txt")
+```
+
+`simulate()` draws a new panel from the fitted coefficients. It does not resample the GSS rows. The intercept column is ones. The other covariates are standard normal. The wave dates are the grid stored with the fit. The size is the estimation sample: 11,252 people and 8 waves, 90,016 rows. The seed defaults to the fit seed plus 17 and does not change R's random-number generator. `nsim` greater than 1 returns a list of panels. The first rows of `simulate(fit, nsim = 1, seed = 2)` are:
+
+```{r, echo = FALSE, comment = ""}
+guide_text("guide_simulate.txt")
+```
+
+The returned frame can be passed back to `attitudedyn()`.
+
+## Saving and reloading
+
+`saveRDS()` stores the coefficients, the covariance, and the panel inputs. It does not keep the external pointer to the prepared C++ problem. The next call that needs the problem rebuilds it. The log-likelihood and the persistence matrix from the reloaded object match the object that was saved.
+
+```{r, eval = FALSE}
+saveRDS(fit, "gss_fit.rds")
+fit2 <- readRDS("gss_fit.rds")
+persistence_matrix(fit2)
+```
+
+```{r, echo = FALSE, comment = ""}
+guide_text("guide_reload.txt")
+```
+
+## Troubleshooting
+
+**The optimiser did not converge.** `summary()` prints `Optimiser code:` and the integer `optim()` returned, instead of `Converged.`, when `maxit` was positive and the code is not 0. A code of 1 is the iteration cap. Fit again from `start = coef(fit)` with a larger `maxit`. `maxit = 0` is not a failed search: it returns code 0 because it was asked only to evaluate the start. After a search that does report convergence, a warning that the largest scaled score exceeds 0.05 means the estimates may not be at a maximum. A warning that the spectral radius is 1 or more means the latent recursion is not stationary.
+
+**The run is slow.** Almost all of the time is the simulated likelihood. One evaluation of the GSS sample, at 10 draws and 4 threads, takes a few seconds, and the search quoted above took 202.6 seconds. The cost moves about in proportion to `draws`. Fifty draws are about five times ten. `vcov = "hessian"` and `vcov = "sandwich"` difference the analytic gradient once per free coefficient, so on this sample they are a different order of cost from `opg_centered`. Set `vcov = "none"` on a trial search, and compute the covariance you want once at the end. `trace = 1` prints the log-likelihood each iteration so a long search is not silent.
+
+**Threads.** `n_threads` splits the person loop. The default is 1. Set it to the number of cores you want to use. Person contributions are added afterwards in person order, so the log-likelihood and the gradient do not change with the thread count.
+
+**The same seed on another machine, or with another thread count.** The draws are Philox values keyed by the seed, the person index, and the draw. They do not use R's random-number generator, and they do not depend on which thread evaluates a person. The same person order produces the same draws on every platform. For the GSS file, keep every person the loader returned, including the weight-0 rows, in that order. The summed log-likelihood can still move by less than `1e-9` when the math library's `exp`, `log`, or normal tail differs across platforms. That is a different math library, not a different seed and not a different thread count.
+
+## Further reading
+
+The vignette *Model and estimation* writes the recursion, the cuts, the simulated likelihood, and the four covariance estimators. The vignette *Replicating the GSS application* is the map from the replication file to this sample. Nepaul and Stern (2026) discuss the GSS estimates.
+
+```{r}
+citation("attitudedyn")
+```

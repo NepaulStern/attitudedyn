@@ -4,6 +4,7 @@
 ^validation$
 ^python(/|$)
 ^cran-comments\.md$
+^docs$
 ^\.github$
 ^\.gitignore$
 ^wheel-stage$

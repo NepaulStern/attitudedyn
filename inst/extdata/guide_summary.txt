@@ -1,0 +1,189 @@
+Dynamic ordinal attitude model
+Log-likelihood: -111571
+People: 11252   Attitudes: 6   Waves: 8
+Draws: 10 (plus antithetic twins)
+Free coefficients: 164
+Converged.
+
+Coefficients (unconstrained scale):
+                                       Estimate Std. Error z value Pr(>|z|)    
+wave_effect[ideology,1]               2.1941423  0.0537641  40.811  < 2e-16 ***
+wave_effect[ideology,2]               2.0744620  0.0524552  39.547  < 2e-16 ***
+wave_effect[ideology,3]               2.0274193  0.0529011  38.325  < 2e-16 ***
+wave_effect[ideology,4]               1.9231057  0.0595047  32.319  < 2e-16 ***
+wave_effect[ideology,5]               1.8264570  0.0655090  27.881  < 2e-16 ***
+wave_effect[ideology,6]               2.0861534  0.0528405  39.480  < 2e-16 ***
+wave_effect[ideology,7]               2.0660901  0.0533493  38.728  < 2e-16 ***
+wave_effect[ideology,8]               2.0566321  0.0523856  39.259  < 2e-16 ***
+wave_effect[military,1]              -0.2889749  0.0689926  -4.188 2.81e-05 ***
+wave_effect[military,2]              -0.4335825  0.0676748  -6.407 1.49e-10 ***
+wave_effect[military,3]              -0.2319155  0.0670159  -3.461 0.000539 ***
+wave_effect[military,4]              -0.3482563  0.0772690  -4.507 6.57e-06 ***
+wave_effect[military,5]              -0.1698270  0.0834813  -2.034 0.041920 *  
+wave_effect[military,6]               0.0910581  0.0664500   1.370 0.170585    
+wave_effect[military,7]              -0.0163355  0.0692970  -0.236 0.813641    
+wave_effect[military,8]              -0.2068669  0.0712802  -2.902 0.003706 ** 
+wave_effect[welfare,1]                0.7630974  0.0728907  10.469  < 2e-16 ***
+wave_effect[welfare,2]                0.7419312  0.0700240  10.595  < 2e-16 ***
+wave_effect[welfare,3]                0.6196218  0.0710690   8.719  < 2e-16 ***
+wave_effect[welfare,4]                0.5005122  0.0817232   6.124 9.10e-10 ***
+wave_effect[welfare,5]                0.5609386  0.0921999   6.084 1.17e-09 ***
+wave_effect[welfare,6]                0.6038019  0.0703441   8.584  < 2e-16 ***
+wave_effect[welfare,7]                0.7417195  0.0727465  10.196  < 2e-16 ***
+wave_effect[welfare,8]                0.6935587  0.0751544   9.228  < 2e-16 ***
+wave_effect[immigrants,2]             1.2917825  0.0563771  22.913  < 2e-16 ***
+wave_effect[immigrants,3]             1.1481654  0.0494667  23.211  < 2e-16 ***
+wave_effect[immigrants,4]             1.0310476  0.0545704  18.894  < 2e-16 ***
+wave_effect[immigrants,5]             1.1123856  0.0629917  17.659  < 2e-16 ***
+wave_effect[immigrants,6]             1.4989960  0.0530972  28.231  < 2e-16 ***
+wave_effect[immigrants,7]             1.6748767  0.0545736  30.690  < 2e-16 ***
+wave_effect[immigrants,8]             1.1931448  0.0594779  20.060  < 2e-16 ***
+wave_effect[party,1]                  1.7847910  0.0635696  28.076  < 2e-16 ***
+wave_effect[party,2]                  1.4903251  0.0614461  24.254  < 2e-16 ***
+wave_effect[party,3]                  1.4836998  0.0628667  23.601  < 2e-16 ***
+wave_effect[party,4]                  1.3822813  0.0703357  19.653  < 2e-16 ***
+wave_effect[party,5]                  1.3587703  0.0769386  17.660  < 2e-16 ***
+wave_effect[party,6]                  1.6025983  0.0633102  25.313  < 2e-16 ***
+wave_effect[party,7]                  1.6647807  0.0641175  25.965  < 2e-16 ***
+wave_effect[party,8]                  1.5789136  0.0627785  25.151  < 2e-16 ***
+wave_effect[environment,1]            2.0956683  0.0835807  25.074  < 2e-16 ***
+wave_effect[environment,2]            1.9746985  0.0789305  25.018  < 2e-16 ***
+wave_effect[environment,3]            1.6762293  0.0791430  21.180  < 2e-16 ***
+wave_effect[environment,4]            1.7640300  0.0892055  19.775  < 2e-16 ***
+wave_effect[environment,5]            1.8917793  0.1009794  18.734  < 2e-16 ***
+wave_effect[environment,6]            1.8913728  0.0800032  23.641  < 2e-16 ***
+wave_effect[environment,7]            2.0876120  0.0825420  25.292  < 2e-16 ***
+wave_effect[environment,8]            2.2786466  0.0880092  25.891  < 2e-16 ***
+beta[ideology,age]                    0.0089057  0.0005342  16.672  < 2e-16 ***
+beta[ideology,hs]                     0.0389436  0.0279587   1.393 0.163652    
+beta[ideology,college]               -0.1317866  0.0330858  -3.983 6.80e-05 ***
+beta[ideology,adv]                   -0.4364247  0.0371282 -11.755  < 2e-16 ***
+beta[ideology,female]                -0.1120732  0.0177608  -6.310 2.79e-10 ***
+beta[ideology,white]                  0.0347212  0.0322873   1.075 0.282202    
+beta[ideology,black]                 -0.1507740  0.0385956  -3.907 9.36e-05 ***
+beta[ideology,inc_mid]                0.0487865  0.0281083   1.736 0.082623 .  
+beta[ideology,inc_high]               0.0718818  0.0198514   3.621 0.000293 ***
+beta[military,age]                    0.0101607  0.0006765  15.019  < 2e-16 ***
+beta[military,hs]                     0.0289969  0.0380864   0.761 0.446450    
+beta[military,college]               -0.3022579  0.0446899  -6.763 1.35e-11 ***
+beta[military,adv]                   -0.4892573  0.0503311  -9.721  < 2e-16 ***
+beta[military,female]                 0.1432222  0.0228363   6.272 3.57e-10 ***
+beta[military,white]                  0.2397194  0.0410202   5.844 5.10e-09 ***
+beta[military,black]                  0.0954955  0.0488587   1.955 0.050639 .  
+beta[military,inc_mid]               -0.0569046  0.0409789  -1.389 0.164945    
+beta[military,inc_high]               0.0578839  0.0274156   2.111 0.034743 *  
+beta[welfare,age]                    -0.0011595  0.0007069  -1.640 0.100968    
+beta[welfare,hs]                     -0.1348336  0.0395273  -3.411 0.000647 ***
+beta[welfare,college]                -0.0023377  0.0471708  -0.050 0.960474    
+beta[welfare,adv]                     0.1399726  0.0531799   2.632 0.008487 ** 
+beta[welfare,female]                  0.0380378  0.0240004   1.585 0.112994    
+beta[welfare,white]                  -0.1434826  0.0443823  -3.233 0.001226 ** 
+beta[welfare,black]                   0.2604711  0.0522900   4.981 6.32e-07 ***
+beta[welfare,inc_mid]                -0.0171697  0.0425877  -0.403 0.686829    
+beta[welfare,inc_high]               -0.3048533  0.0286805 -10.629  < 2e-16 ***
+beta[immigrants,age]                 -0.0058785  0.0005455 -10.776  < 2e-16 ***
+beta[immigrants,hs]                  -0.0309034  0.0283839  -1.089 0.276258    
+beta[immigrants,college]              0.3137607  0.0344473   9.108  < 2e-16 ***
+beta[immigrants,adv]                  0.4583673  0.0399446  11.475  < 2e-16 ***
+beta[immigrants,female]               0.0185234  0.0185384   0.999 0.317701    
+beta[immigrants,white]               -0.3861795  0.0359207 -10.751  < 2e-16 ***
+beta[immigrants,black]               -0.1063404  0.0415327  -2.560 0.010455 *  
+beta[immigrants,inc_mid]             -0.0431484  0.0347252  -1.243 0.214027    
+beta[immigrants,inc_high]             0.0041456  0.0227025   0.183 0.855106    
+beta[party,age]                       0.0017225  0.0006138   2.806 0.005012 ** 
+beta[party,hs]                        0.0938045  0.0326870   2.870 0.004108 ** 
+beta[party,college]                   0.0330299  0.0383447   0.861 0.389022    
+beta[party,adv]                      -0.3250306  0.0423939  -7.667 1.76e-14 ***
+beta[party,female]                   -0.2052396  0.0205524  -9.986  < 2e-16 ***
+beta[party,white]                     0.3214132  0.0382564   8.402  < 2e-16 ***
+beta[party,black]                    -0.8077600  0.0471898 -17.117  < 2e-16 ***
+beta[party,inc_mid]                  -0.0809915  0.0319099  -2.538 0.011145 *  
+beta[party,inc_high]                  0.0276228  0.0222733   1.240 0.214909    
+beta[environment,age]                -0.0119296  0.0008175 -14.593  < 2e-16 ***
+beta[environment,hs]                  0.1213069  0.0438863   2.764 0.005708 ** 
+beta[environment,college]             0.2617630  0.0528494   4.953 7.31e-07 ***
+beta[environment,adv]                 0.3746265  0.0597782   6.267 3.68e-10 ***
+beta[environment,female]              0.1692836  0.0264715   6.395 1.61e-10 ***
+beta[environment,white]               0.1350966  0.0491690   2.748 0.006003 ** 
+beta[environment,black]               0.1885472  0.0600911   3.138 0.001703 ** 
+beta[environment,inc_mid]             0.0368881  0.0481087   0.767 0.443220    
+beta[environment,inc_high]            0.0612614  0.0330392   1.854 0.063710 .  
+persistence[ideology,ideology]        0.4929822  0.0199398  24.724  < 2e-16 ***
+persistence[ideology,military]       -0.0670045  0.0319538  -2.097 0.036001 *  
+persistence[ideology,welfare]        -0.0653064  0.0313714  -2.082 0.037368 *  
+persistence[ideology,immigrants]      0.0856246  0.0284250   3.012 0.002593 ** 
+persistence[ideology,party]          -0.2950461  0.0186786 -15.796  < 2e-16 ***
+persistence[ideology,environment]    -0.2023370  0.0243130  -8.322  < 2e-16 ***
+persistence[military,ideology]       -0.0299188  0.0302248  -0.990 0.322235    
+persistence[military,military]        1.1076984  0.0453443  24.429  < 2e-16 ***
+persistence[military,welfare]         0.0052441  0.0376714   0.139 0.889286    
+persistence[military,immigrants]      0.0330585  0.0418609   0.790 0.429689    
+persistence[military,party]          -0.1723202  0.0299407  -5.755 8.64e-09 ***
+persistence[military,environment]     0.0238193  0.0312941   0.761 0.446572    
+persistence[welfare,ideology]        -0.0051217  0.0306405  -0.167 0.867247    
+persistence[welfare,military]         0.0625967  0.0403353   1.552 0.120684    
+persistence[welfare,welfare]          1.1979390  0.0514110  23.301  < 2e-16 ***
+persistence[welfare,immigrants]       0.0186753  0.0451096   0.414 0.678875    
+persistence[welfare,party]            0.1070651  0.0300477   3.563 0.000366 ***
+persistence[welfare,environment]     -0.3158117  0.0337594  -9.355  < 2e-16 ***
+persistence[immigrants,ideology]      0.0198812  0.0243968   0.815 0.415125    
+persistence[immigrants,military]      0.0178309  0.0391905   0.455 0.649124    
+persistence[immigrants,welfare]       0.1008591  0.0370961   2.719 0.006551 ** 
+persistence[immigrants,immigrants]    0.9300592  0.0319868  29.076  < 2e-16 ***
+persistence[immigrants,party]         0.1148096  0.0229413   5.004 5.60e-07 ***
+persistence[immigrants,environment]  -0.2655765  0.0290634  -9.138  < 2e-16 ***
+persistence[party,ideology]          -0.4748645  0.0227951 -20.832  < 2e-16 ***
+persistence[party,military]          -0.1580436  0.0388624  -4.067 4.77e-05 ***
+persistence[party,welfare]            0.0554088  0.0371306   1.492 0.135629    
+persistence[party,immigrants]         0.0772782  0.0325446   2.375 0.017571 *  
+persistence[party,party]              1.0134620  0.0295038  34.350  < 2e-16 ***
+persistence[party,environment]       -0.0722021  0.0272564  -2.649 0.008073 ** 
+persistence[environment,ideology]    -0.2420093  0.0327189  -7.397 1.40e-13 ***
+persistence[environment,military]     0.0139213  0.0425888   0.327 0.743760    
+persistence[environment,welfare]     -0.0612010  0.0437958  -1.397 0.162288    
+persistence[environment,immigrants]  -0.2336026  0.0457812  -5.103 3.35e-07 ***
+persistence[environment,party]       -0.0004285  0.0302619  -0.014 0.988702    
+persistence[environment,environment]  0.5783928  0.0419667  13.782  < 2e-16 ***
+loading[ideology,f1]                  0.7295071  0.0144984  50.316  < 2e-16 ***
+loading[military,f1]                  0.3952179  0.0178927  22.088  < 2e-16 ***
+loading[welfare,f1]                  -0.5442296  0.0221741 -24.544  < 2e-16 ***
+loading[immigrants,f1]               -0.3516619  0.0172755 -20.356  < 2e-16 ***
+loading[party,f1]                     0.8982417  0.0162758  55.189  < 2e-16 ***
+loading[environment,f1]              -0.7136668  0.0257463 -27.719  < 2e-16 ***
+loading[ideology,f2]                  0.6954219  0.0142327  48.861  < 2e-16 ***
+loading[military,f2]                  0.3165264  0.0180866  17.501  < 2e-16 ***
+loading[welfare,f2]                  -0.1346097  0.0185757  -7.247 4.28e-13 ***
+loading[immigrants,f2]               -0.1641813  0.0155555 -10.555  < 2e-16 ***
+loading[party,f2]                     0.9344969  0.0180439  51.790  < 2e-16 ***
+threshold[ideology,3]                 0.0719237  0.0151398   4.751 2.03e-06 ***
+threshold[ideology,4]                -0.5367623  0.0175651 -30.558  < 2e-16 ***
+threshold[ideology,5]                 0.3381551  0.0094265  35.873  < 2e-16 ***
+threshold[ideology,6]                -0.4512963  0.0162089 -27.842  < 2e-16 ***
+threshold[ideology,7]                 0.2257065  0.0135017  16.717  < 2e-16 ***
+threshold[military,3]                 0.1857149  0.0132427  14.024  < 2e-16 ***
+threshold[welfare,3]                  0.1808185  0.0137308  13.169  < 2e-16 ***
+threshold[immigrants,3]              -0.2677031  0.0157240 -17.025  < 2e-16 ***
+threshold[immigrants,4]               0.2673128  0.0116404  22.964  < 2e-16 ***
+threshold[immigrants,5]              -0.3217897  0.0239329 -13.445  < 2e-16 ***
+threshold[party,3]                   -0.0760676  0.0140251  -5.424 5.84e-08 ***
+threshold[party,4]                   -0.4901347  0.0163357 -30.004  < 2e-16 ***
+threshold[party,5]                   -0.0502956  0.0131204  -3.833 0.000126 ***
+threshold[party,6]                   -0.6040017  0.0187373 -32.235  < 2e-16 ***
+threshold[party,7]                   -0.0217444  0.0154967  -1.403 0.160568    
+threshold[environment,3]              0.3211302  0.0165431  19.412  < 2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+The 10% cutoff is 1.645.
+
+Persistence on (-1, 1), receiving attitude by source attitude:
+            ideology military welfare immigrants  party environment
+ideology       0.242   -0.033  -0.033      0.043 -0.146      -0.101
+military      -0.015    0.503   0.003      0.017 -0.086       0.012
+welfare       -0.003    0.031   0.536      0.009  0.053      -0.157
+immigrants     0.010    0.009   0.050      0.434  0.057      -0.132
+party         -0.233   -0.079   0.028      0.039  0.467      -0.036
+environment   -0.120    0.007  -0.031     -0.116  0.000       0.281
+
+Covariance type: opg_centered

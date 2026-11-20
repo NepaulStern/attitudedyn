@@ -1,0 +1,8 @@
+                        wave_effect[ideology,1] wave_effect[ideology,2]
+wave_effect[ideology,1]                0.002891                0.002241
+wave_effect[ideology,2]                0.002241                0.002752
+wave_effect[ideology,3]                0.002252                0.002404
+                        wave_effect[ideology,3]
+wave_effect[ideology,1]                0.002252
+wave_effect[ideology,2]                0.002404
+wave_effect[ideology,3]                0.002799
