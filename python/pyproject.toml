@@ -51,7 +51,7 @@ Homepage = "https://nepaulstern.github.io/"
 Documentation = "https://nepaulstern.github.io/"
 Repository = "https://github.com/gabrielgggg/attitudedyn"
 Issues = "https://github.com/gabrielgggg/attitudedyn/issues"
-Changelog = "https://github.com/gabrielgggg/attitudedyn/blob/master/notes/ROADMAP.md"
+Changelog = "https://github.com/gabrielgggg/attitudedyn/blob/master/NEWS.md"
 
 [tool.scikit-build]
 minimum-version = "0.10"

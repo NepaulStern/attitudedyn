@@ -5,10 +5,11 @@ Authors@R: person("Gabriel", "Mihalache", email = "mihalache.2@osu.edu", role = 
 Author: Gabriel Mihalache [aut, cre]
 Maintainer: Gabriel Mihalache <mihalache.2@osu.edu>
 Description: Estimates The Nepaul-Stern Model of Attitude Stability and
-    Constraint for several Likert-scale attitudes measured on the same
-    people across survey waves. The likelihood is a
-    Geweke-Hajivassiliou-Keane simulated likelihood. The latent attitude
-    carries forward from one wave to the next.
+    Constraint (Nepaul and Stern, 2026) <doi:10.1017/pan.2026.10034> for
+    several Likert-scale attitudes measured on the same people across
+    survey waves. The likelihood is a Geweke-Hajivassiliou-Keane simulated
+    likelihood. The latent attitude carries forward from one wave to the
+    next.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Language: en-US

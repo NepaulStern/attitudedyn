@@ -14,7 +14,9 @@ Two further NOTEs appear only on this Ubuntu build of R, and not from the packag
 * `unable to verify current time`. The clock check could not reach a time server from this machine.
 * Compilation used `-mno-omit-leaf-frame-pointer`. Ubuntu's `Makeconf` puts that flag in `CXX17FLAGS`. `src/Makevars` does not set it. CRAN's toolchain does not add it, and the GitHub Actions R builds do not either.
 
-Examples for every exported function finish in well under a second. The spelling word list is clean, and the article and replication-package URLs in `DESCRIPTION` resolve.
+The C++ specification check is OK. It prints the standard line that not all R platforms support C++17, which is what `SystemRequirements: C++17` asks for. The HTML version of the manual was checked with HTML Tidy and reported no problems.
+
+Examples for every exported function finish in well under a second. The spelling word list is clean. `DESCRIPTION` cites Nepaul and Stern (2026) as `<doi:10.1017/pan.2026.10034>`. The project site, the article, and the replication-package URLs in `DESCRIPTION` resolve.
 
 ## This is a new submission
 
