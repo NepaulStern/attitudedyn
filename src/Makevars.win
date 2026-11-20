@@ -1,0 +1,19 @@
+CXX_STD = CXX17
+PKG_CPPFLAGS = -Icore/include -Icore/src
+PKG_LIBS = -pthread
+
+OBJECTS = RcppExports.o wrapper.o layout.o draws.o likelihood.o postestimation.o
+
+all: $(SHLIB)
+
+layout.o: core/src/layout.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $@
+
+draws.o: core/src/draws.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $@
+
+likelihood.o: core/src/likelihood.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $@
+
+postestimation.o: core/src/postestimation.cpp
+	$(CXX) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) -c $< -o $@

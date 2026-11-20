@@ -1,0 +1,22 @@
+citHeader("To cite The Nepaul-Stern Model of Attitude Stability and Constraint, and the replication package, in publications use:")
+
+bibentry(
+  bibtype = "Article",
+  title = "A Dynamic Discrete Choice Approach to Attitude Stability and Constraint",
+  author = c(person("Alecia", "Nepaul"), person("Steven", "Stern")),
+  journal = "Political Analysis",
+  year = 2026,
+  volume = 34,
+  pages = "490--509",
+  doi = "10.1017/pan.2026.10034"
+)
+
+bibentry(
+  bibtype = "Misc",
+  title = "Replication Data for: A Dynamic Discrete Choice Approach to Attitude Stability and Constraint",
+  author = c(person("Alecia", "Nepaul"), person("Steven", "Stern")),
+  year = 2026,
+  publisher = "Harvard Dataverse",
+  doi = "10.7910/DVN/DUCHYS",
+  note = "Replication package, Harvard Dataverse"
+)

@@ -1,0 +1,9 @@
+                     term estimate  std.error statistic       p.value
+1 wave_effect[ideology,1] 2.194142 0.05376410  40.81055  0.000000e+00
+2 wave_effect[ideology,2] 2.074462 0.05245524  39.54728  0.000000e+00
+3 wave_effect[ideology,3] 2.027419 0.05290115  38.32467  0.000000e+00
+4 wave_effect[ideology,4] 1.923106 0.05950472  32.31854 3.840033e-229
+5 wave_effect[ideology,5] 1.826457 0.06550899  27.88101 4.534093e-171
+6 wave_effect[ideology,6] 2.086153 0.05284053  39.48018  0.000000e+00
+7 wave_effect[ideology,7] 2.066090 0.05334925  38.72763  0.000000e+00
+8 wave_effect[ideology,8] 2.056632 0.05238561  39.25949  0.000000e+00

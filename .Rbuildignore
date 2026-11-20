@@ -1,0 +1,13 @@
+^src/core/tests
+^src/core/Makefile
+^notes$
+^validation$
+^python(/|$)
+^cran-comments\.md$
+^docs$
+^\.github$
+^\.gitignore$
+^wheel-stage$
+^wheelhouse$
+^.*\.Rproj$
+^\.Rproj\.user$

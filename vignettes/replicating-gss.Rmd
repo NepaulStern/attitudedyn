@@ -1,0 +1,46 @@
+---
+title: "Replicating the GSS application of The Nepaul-Stern Model"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Replicating the GSS application}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+Nepaul and Stern (2026) estimate The Nepaul-Stern Model of Attitude Stability and Constraint on six GSS Likert items, using four stacked rotating panels from 2006 to 2020: ideological identification, military spending, welfare spending, the number of immigrants, party identification, and environmental spending. The survey file comes from their replication deposit on Harvard Dataverse (doi:10.7910/DVN/DUCHYS), dedicated to the public domain under CC0 1.0. The replication program reads `gss2.prn`, collapses person-waves to people, and uses a common time grid
+
+```{r}
+gss_time_grid <- c(2, 3, 4, 5, 6, 7, 8, 10)
+```
+
+rather than each respondent's own interview date. The gaps are the differences of this grid: 1, 1, 1, 1, 1, 1, 2. Those integers are the exponents on the persistence matrix.
+
+The file contains 11,282 people. The likelihood keeps 11,252 of them. The Likert answers are coded `1, ..., K` with `K` equal to 7, 3, 3, 5, 7, 3. Party identification is stored as 0 through 6 in the text file and enters the likelihood as 1 through 7. The intercept of each attitude is fixed at zero because the model includes a wave effect for every attitude, and the loading of the environment item on the second factor is fixed at zero.
+
+A full re-estimation is a few hundred likelihood evaluations of about eleven thousand people. The script `validation/run_gss.R` does that job. It is not run when the package is checked. The call it makes has this shape.
+
+```{r, eval = FALSE}
+fit <- attitudedyn(
+  cbind(ideology, military, welfare, immigrants, party, environment) ~
+    0 + `(Intercept)` + age + hs + college + adv + female + white + black +
+    inc_mid + inc_high,
+  data = gss,
+  id = ~ id,
+  wave = ~ wave,
+  time_grid = c(2, 3, 4, 5, 6, 7, 8, 10),
+  weights = weight,
+  n_factors = 2,
+  draws = 10,
+  start = estimates,
+  control = attitudedyn_control(n_threads = 20, maxit = 0, vcov = "none",
+                                use_gradient = FALSE, keep_scores = FALSE)
+)
+```
+
+The constant is 1 on a wave that is in the text file and 0 on a wave that is only there because it sits between a person's first and last waves. `validation/run_gss.R` builds that column and evaluates the shipped coefficients.
+
+`validation/compare_gss` checks the likelihood on the same prepared sample and the same draws. On that comparison the likelihoods agree. The package evaluation of the replication estimates uses Philox draws, seed 1, and 10 antithetic pairs.

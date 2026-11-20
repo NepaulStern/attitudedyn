@@ -1,0 +1,2 @@
+   logLik      AIC      BIC  nobs n_free draws converged
+1 -111571 223469.9 224671.8 11252    164    10      TRUE
