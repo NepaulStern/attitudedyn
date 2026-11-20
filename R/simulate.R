@@ -13,15 +13,16 @@ simulation_frame <- function(panel, attitude_names, covariate_names) {
              check.names = FALSE)
 }
 
-#' Simulate a panel from the structural model
+#' Simulate Likert items from The Nepaul-Stern Model
 #'
-#' Draws covariates and ordinal outcomes from the latent-attitude recursion
-#' in the replication likelihood. The returned data frame is ready for
-#' [attitudedyn()]. Category 1 is the lowest category.
+#' Draws covariates and Likert answers from The Nepaul-Stern Model of
+#' Attitude Stability and Constraint at a known set of coefficients. The
+#' returned data frame is ready for [attitudedyn()]. Category 1 is the
+#' lowest category.
 #'
 #' @param n_persons Number of people.
 #' @param n_waves Number of equally spaced waves, unless `wave_time` is set.
-#' @param n_attitudes Number of ordinal outcomes, named `y1`, `y2`, ...
+#' @param n_attitudes Number of Likert items, named `y1`, `y2`, ...
 #' @param n_factors Number of person factors.
 #' @param n_categories Categories per attitude. A single integer is recycled.
 #' @param seed Seed for the counter-based generator.

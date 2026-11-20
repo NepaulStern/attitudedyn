@@ -1,4 +1,4 @@
-"""Fitted dynamic ordinal attitude model."""
+"""Fitted results from The Nepaul-Stern Model."""
 
 from __future__ import annotations
 
@@ -55,10 +55,11 @@ class ImpulseResponse:
 
 
 class AttitudeDynResult:
-    """Maximum simulated-likelihood estimates of a dynamic ordinal attitude model.
+    """Estimates from The Nepaul-Stern Model of Attitude Stability and Constraint.
 
-    Coefficients are on the unconstrained scale used by the optimiser.
-    :meth:`persistence_matrix` reports persistence on (-1, 1).
+    ``params`` holds the free coefficients on the scale used by the search.
+    :meth:`persistence_matrix` maps persistence onto (-1, 1), which is the
+    scale of the attitude recursion.
 
     Attributes
     ----------
@@ -360,7 +361,7 @@ class AttitudeDynResult:
         chosen = vcov_type if vcov_type is not None else type
         chosen = self._vcov_type if chosen is None else chosen
         header = [
-            "Dynamic ordinal attitude model",
+            "The Nepaul-Stern Model of Attitude Stability and Constraint",
             f"Log-likelihood: {self.loglik:.6f}",
             (
                 f"People: {self.nobs}   Attitudes: {self._prepared.n_attitudes}   "

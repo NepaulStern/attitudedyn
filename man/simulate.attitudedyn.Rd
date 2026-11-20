@@ -2,7 +2,7 @@
 % Please edit documentation in R/methods.R
 \name{simulate.attitudedyn}
 \alias{simulate.attitudedyn}
-\title{Draw panels from a fitted attitude model}
+\title{Draw panels from a fit of The Nepaul-Stern Model}
 \usage{
 \method{simulate}{attitudedyn}(object, nsim = 1, seed = NULL, ...)
 }
@@ -24,7 +24,7 @@ the intercept, and the outcomes. Category 1 is the lowest category.
 The frame can be passed back to \code{\link[=attitudedyn]{attitudedyn()}}.
 }
 \description{
-Draws covariates and ordinal outcomes from the structural model at the
+Draws covariates and Likert answers from The Nepaul-Stern Model at the
 fitted coefficients. Intercept columns are filled with ones and the other
 covariates are standard normal. This is a new panel of the same size as
 the estimation sample, not a resample of its rows.

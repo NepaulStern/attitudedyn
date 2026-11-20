@@ -158,13 +158,14 @@ run_bhhh <- function(start, loglik_fn, score_fn, maxit, reltol, trace) {
   list(par = theta, value = current, convergence = convergence)
 }
 
-#' Fit a dynamic ordinal attitude model
+#' Fit The Nepaul-Stern Model of Attitude Stability and Constraint
 #'
-#' Estimates the panel ordered-probit model in the Nepaul and Stern (2026)
-#' replication package by simulated maximum likelihood. Several ordinal
-#' attitudes are linked by a matrix of persistence coefficients and by
-#' person-level factors. The whole latent attitude carries forward from one
-#' wave to the next, as in the Fortran likelihood.
+#' Estimates The Nepaul-Stern Model of Attitude Stability and Constraint
+#' by simulated maximum likelihood. Several Likert-scale attitudes, measured
+#' on the same people across survey waves, are linked by a matrix of
+#' persistence coefficients and by person-level factors. The latent attitude
+#' carries forward from one wave to the next. The recorded answer is the
+#' Likert category that latent attitude falls into.
 #'
 #' The formula has one row per person-wave and one column per attitude:
 #'
@@ -178,8 +179,8 @@ run_bhhh <- function(start, loglik_fn, score_fn, maxit, reltol, trace) {
 #' simulation. Wave dates are common to everyone: pass `time_grid` or a
 #' `time` column that does not vary within a wave.
 #'
-#' @param formula A formula. The left-hand side is one outcome or
-#'   [cbind()] of ordinal outcomes coded `1, ..., K`.
+#' @param formula A formula. The left-hand side is one Likert item or
+#'   [cbind()] of Likert items coded `1, ..., K`.
 #' @param data A long-format data frame.
 #' @param id,wave The person identifier and the wave, as a one-sided formula
 #'   or a column name.

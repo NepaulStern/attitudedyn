@@ -17,7 +17,8 @@ attitude, indexed as receiving attitude then source attitude) and the
 spectral radius.
 }
 \description{
-The response at horizon 0 is the identity. Later horizons are powers of the
+How a one-time shock to a latent attitude spreads through The Nepaul-Stern
+Model. The response at horizon 0 is the identity. Later horizons are powers of the
 natural persistence matrix, which is the recursion over a gap of one time
 unit. The path is that of a one-time innovation to the latent attitude.
 }

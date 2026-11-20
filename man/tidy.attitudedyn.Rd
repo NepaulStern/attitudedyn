@@ -3,7 +3,7 @@
 \name{tidy.attitudedyn}
 \alias{tidy.attitudedyn}
 \alias{glance.attitudedyn}
-\title{Tidy a fitted attitude model}
+\title{Tidy a fit of The Nepaul-Stern Model}
 \usage{
 \method{tidy}{attitudedyn}(
   x,
@@ -34,8 +34,9 @@ standard errors stay on the unconstrained scale.}
 \code{glance()} returns a one-row data frame of fit statistics.
 }
 \description{
-\code{tidy()} returns one row per unconstrained coefficient. \code{glance()} returns
-one row of fit statistics. Both follow the column names used by broom.
+\code{tidy()} returns one row per coefficient on the scale used by the search.
+\code{glance()} returns one row of fit statistics. Both follow the column names
+used by broom.
 }
 \examples{
 panel <- simulate_attitudes(n_persons = 20, n_waves = 3, n_factors = 1, seed = 1)

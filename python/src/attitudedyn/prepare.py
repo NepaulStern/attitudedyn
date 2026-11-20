@@ -178,7 +178,7 @@ def prepare_panel(
     data :
         Long-format frame, one row per person-wave.
     outcomes, covariates :
-        Column names. Outcomes are ordinal and coded ``1, ..., K``.
+        Column names. Outcomes are Likert items coded ``1, ..., K``.
     id_col, wave_col :
         Person identifier and wave. Both are required and cannot be missing.
     time_col, time_grid :

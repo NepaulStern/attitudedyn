@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulate.R
 \name{simulate_attitudes}
 \alias{simulate_attitudes}
-\title{Simulate a panel from the structural model}
+\title{Simulate Likert items from The Nepaul-Stern Model}
 \usage{
 simulate_attitudes(
   n_persons = 100,
@@ -20,7 +20,7 @@ simulate_attitudes(
 
 \item{n_waves}{Number of equally spaced waves, unless \code{wave_time} is set.}
 
-\item{n_attitudes}{Number of ordinal outcomes, named \code{y1}, \code{y2}, ...}
+\item{n_attitudes}{Number of Likert items, named \code{y1}, \code{y2}, ...}
 
 \item{n_factors}{Number of person factors.}
 
@@ -38,9 +38,10 @@ wave effects. The default is \code{FALSE}, which matches the formula
 A data frame with columns \code{id}, \code{wave}, \code{time}, \code{x}, and the outcomes.
 }
 \description{
-Draws covariates and ordinal outcomes from the latent-attitude recursion
-in the replication likelihood. The returned data frame is ready for
-\code{\link[=attitudedyn]{attitudedyn()}}. Category 1 is the lowest category.
+Draws covariates and Likert answers from The Nepaul-Stern Model of
+Attitude Stability and Constraint at a known set of coefficients. The
+returned data frame is ready for \code{\link[=attitudedyn]{attitudedyn()}}. Category 1 is the
+lowest category.
 }
 \examples{
 simulate_attitudes(n_persons = 5, n_waves = 3, seed = 1)

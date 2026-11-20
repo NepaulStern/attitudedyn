@@ -1,4 +1,4 @@
-"""Simulated maximum likelihood for the dynamic ordinal attitude model."""
+"""Simulated maximum likelihood for The Nepaul-Stern Model."""
 
 from __future__ import annotations
 
@@ -54,26 +54,29 @@ def fit(
     na_action: str = "pass",
     trace: bool = False,
 ) -> AttitudeDynResult:
-    """Fit a dynamic ordinal attitude model by simulated maximum likelihood.
+    """Fit The Nepaul-Stern Model of Attitude Stability and Constraint.
 
-    Several ordinal attitudes are linked by a matrix of persistence
-    coefficients and by person-level factors. The whole latent attitude
-    carries forward from one wave to the next. The likelihood is the GHK
-    simulated likelihood in the authors' replication package, evaluated by
-    the shared C++ core. BFGS is the Nash iteration used by
-    ``stats::optim(method = "BFGS")``, so the same start, analytic gradient,
-    and ``reltol`` follow the same steps as the R package. L-BFGS-B and
-    Nelder-Mead use ``scipy.optimize.minimize``. A trial step that is not
-    finite, or whose threshold increment would overflow, is a rejected
-    step: the objective reported to the optimiser is a large finite penalty
-    and the gradient is zero, so the line search continues.
+    Several Likert items, measured on the same people across survey waves,
+    are linked by a matrix of persistence coefficients and by person-level
+    factors. The latent attitude carries forward from one wave to the next.
+    The recorded answer is the Likert category that latent attitude falls
+    into. The likelihood is a Geweke-Hajivassiliou-Keane (GHK) simulated
+    likelihood.
+
+    The default search follows the same steps as
+    ``stats::optim(method = "BFGS")`` in the R package, and it uses the
+    slope of the likelihood. ``"l-bfgs-b"`` and ``"nelder-mead"`` use
+    ``scipy.optimize.minimize``. A trial step that is not finite, or whose
+    threshold increment would overflow, is rejected: the objective reported
+    to the optimiser is a large finite penalty and the gradient is zero, so
+    the line search continues.
 
     Parameters
     ----------
     data :
         Long-format frame, one row per person-wave.
     outcomes, covariates :
-        Outcome columns, coded as integers ``1, ..., K``, and covariate
+        Likert items, coded as integers ``1, ..., K``, and covariate
         columns. Omit both when ``formula`` is set.
     id_col, wave_col :
         Person identifier and wave column.

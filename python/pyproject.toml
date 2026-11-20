@@ -11,7 +11,7 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "attitudedyn"
 version = "0.1.0"
-description = "Dynamic ordered-probit models for ordinal panel attitudes, over the shared attitudedyn C++ core."
+description = "The Nepaul-Stern Model of Attitude Stability and Constraint for Likert-scale panel attitudes."
 readme = "README.md"
 requires-python = ">=3.10"
 license = "MIT"
@@ -23,7 +23,7 @@ dependencies = [
   "scipy>=1.9",
   "pandas>=1.5",
 ]
-keywords = ["statistics", "panel", "ordered-probit", "attitudes", "simulated-likelihood"]
+keywords = ["statistics", "panel", "likert", "attitudes", "simulated-likelihood"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Science/Research",
@@ -47,8 +47,8 @@ classifiers = [
 test = ["pytest>=7"]
 
 [project.urls]
-Homepage = "https://github.com/gabrielgggg/attitudedyn"
-Documentation = "https://github.com/gabrielgggg/attitudedyn/blob/master/notes/PYTHON_GUIDE.md"
+Homepage = "https://gabrielgggg.github.io/NepaulSternAttitudes/"
+Documentation = "https://gabrielgggg.github.io/NepaulSternAttitudes/"
 Repository = "https://github.com/gabrielgggg/attitudedyn"
 Issues = "https://github.com/gabrielgggg/attitudedyn/issues"
 Changelog = "https://github.com/gabrielgggg/attitudedyn/blob/master/notes/ROADMAP.md"

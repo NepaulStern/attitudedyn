@@ -53,9 +53,9 @@ no analytic gradient; the fit then uses numeric derivatives and says so.}
 \item{vcov}{Which covariance to compute and store with the fit.
 \code{"opg_centered"}, the default, centres the person scores and inverts
 their outer product, which is what the Fortran program did.
-\code{"opg"} is the same inverse without centring. \code{"hessian"} inverts
-the negative numerical Hessian of the analytic gradient. \code{"sandwich"}
-is that inverse, times the uncentred outer product of the scores, times
+\code{"opg"} is the same inverse without centring. \code{"hessian"} inverts the
+negative numerical Hessian of the analytic gradient. \code{"sandwich"} is
+that inverse, times the uncentred outer product of the scores, times
 the inverse. \code{"none"} skips it.}
 
 \item{numerics}{\code{"stable"} uses a double-precision log of a normal
@@ -86,7 +86,8 @@ outer-product covariance and is about \code{n_persons * n_free} doubles.}
 A named list of class \code{"attitudedyn_control"}.
 }
 \description{
-Control parameters for \code{\link[=attitudedyn]{attitudedyn()}}
+Settings for the random draws, the search, and the standard errors when
+fitting The Nepaul-Stern Model of Attitude Stability and Constraint.
 }
 \examples{
 attitudedyn_control(n_threads = 1L, maxit = 20L)

@@ -1,6 +1,6 @@
 #' @export
 print.attitudedyn <- function(x, ...) {
-  cat("Dynamic ordinal attitude model\n")
+  cat("The Nepaul-Stern Model of Attitude Stability and Constraint\n")
   cat("Log-likelihood: ", format(x$loglik, digits = 6), "\n", sep = "")
   cat("People: ", x$n_persons, "   Attitudes: ", x$inputs$n_attitudes,
       "   Waves: ", x$inputs$n_waves, "\n", sep = "")
@@ -153,7 +153,10 @@ confint.attitudedyn <- function(object, parm = NULL, level = 0.95, type = NULL, 
   out[parm, , drop = FALSE]
 }
 
-#' Summarise a fitted attitude model
+#' Summarise a fit of The Nepaul-Stern Model
+#'
+#' Prints the log-likelihood, the coefficients, and the persistence matrix
+#' for a fit of The Nepaul-Stern Model of Attitude Stability and Constraint.
 #'
 #' @param object A fitted model.
 #' @param vcov_type Covariance passed to [vcov()]. `"opg_centered"` centres
@@ -207,7 +210,8 @@ formula.attitudedyn <- function(x, ...) x$formula
 
 #' Predicted Likert probabilities for each person-wave
 #'
-#' Averages structural paths from the fitted model. Each path uses the
+#' Predicted answers from a fit of The Nepaul-Stern Model. The function
+#' averages structural paths from the fitted model. Each path uses the
 #' person's covariates, factors, and lagged latent attitude. The category
 #' probability on a path is the normal interval probability around that
 #' latent value, and the reported probability is the average across paths.
@@ -328,9 +332,9 @@ fitted.attitudedyn <- function(object, ...) {
   observed
 }
 
-#' Draw panels from a fitted attitude model
+#' Draw panels from a fit of The Nepaul-Stern Model
 #'
-#' Draws covariates and ordinal outcomes from the structural model at the
+#' Draws covariates and Likert answers from The Nepaul-Stern Model at the
 #' fitted coefficients. Intercept columns are filled with ones and the other
 #' covariates are standard normal. This is a new panel of the same size as
 #' the estimation sample, not a resample of its rows.
@@ -383,10 +387,11 @@ simulate.attitudedyn <- function(object, nsim = 1, seed = NULL, ...) {
   if (nsim == 1L) simulations[[1L]] else simulations
 }
 
-#' Tidy a fitted attitude model
+#' Tidy a fit of The Nepaul-Stern Model
 #'
-#' `tidy()` returns one row per unconstrained coefficient. `glance()` returns
-#' one row of fit statistics. Both follow the column names used by broom.
+#' `tidy()` returns one row per coefficient on the scale used by the search.
+#' `glance()` returns one row of fit statistics. Both follow the column names
+#' used by broom.
 #'
 #' @param x A fitted model.
 #' @param conf.int Include Wald confidence limits.

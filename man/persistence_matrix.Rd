@@ -13,7 +13,8 @@ persistence_matrix(object)
 A square numeric matrix.
 }
 \description{
-Row \code{to} and column \code{from} is the coefficient that multiplies attitude
+Persistence coefficients from a fit of The Nepaul-Stern Model. Row \code{to}
+and column \code{from} is the coefficient that multiplies attitude
 \code{from} in the recursion for attitude \code{to}, before it is raised to the gap
 between waves. Values lie in (-1, 1).
 }
