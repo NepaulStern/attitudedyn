@@ -19,6 +19,12 @@ test_that("bad inputs are rejected with a useful error", {
     attitudedyn(cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, draws = 0),
     "draws"
   )
+  broken <- panel
+  broken$x[1] <- Inf
+  expect_error(
+    attitudedyn(cbind(y1, y2) ~ x, data = broken, id = ~ id, wave = ~ wave),
+    "covariate"
+  )
 })
 
 test_that("the log-likelihood does not depend on the thread count", {
@@ -51,6 +57,99 @@ test_that("the analytic gradient matches a central difference", {
   expect_equal(base$gradient[1], numeric, tolerance = 1e-4)
 })
 
+test_that("an overflowing threshold is a non-finite objective, not an uncaught error", {
+  panel <- panel_small()
+  quiet <- attitudedyn_control(maxit = 0L, n_threads = 1L, vcov = "none")
+  fit <- attitudedyn(
+    cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+    n_factors = 1L, draws = 3L, control = quiet
+  )
+  start <- coef(fit)
+  thresh <- grep("^threshold\\[", names(start))
+  expect_gte(length(thresh), 1L)
+
+  extreme <- start
+  extreme[thresh[[1L]]] <- 80
+  evaluation <- attitudedyn:::attitudedyn_eval_cpp(
+    fit$cache$problem, extreme, TRUE, 0L, FALSE, 1L, TRUE, FALSE, FALSE, NULL, NULL
+  )
+  expect_false(is.finite(evaluation$objective))
+  expect_length(evaluation$gradient, length(extreme))
+  expect_true(all(is.finite(evaluation$gradient)))
+
+  nonfinite <- start
+  nonfinite[thresh[[1L]]] <- Inf
+  inf_eval <- attitudedyn:::attitudedyn_eval_cpp(
+    fit$cache$problem, nonfinite, TRUE, 0L, FALSE, 1L, TRUE, FALSE, FALSE, NULL, NULL
+  )
+  expect_false(is.finite(inf_eval$objective))
+  expect_true(all(is.finite(inf_eval$gradient)))
+
+  expect_error(
+    attitudedyn(
+      cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+      n_factors = 1L, draws = 3L, start = extreme, control = quiet
+    ),
+    "starting values"
+  )
+})
+
+overflow_start <- function() {
+  # At this start the threshold scores are positive and larger than the
+  # distance to the exp() guard, so the first BFGS / L-BFGS-B / nlminb trial
+  # steps past it. The panel is still small enough for a unit test.
+  panel <- simulate_attitudes(
+    n_persons = 120, n_waves = 3, n_attitudes = 2,
+    n_factors = 1, n_categories = 3, seed = 4
+  )
+  quiet <- attitudedyn_control(maxit = 0L, n_threads = 1L, vcov = "none")
+  base <- attitudedyn(
+    cbind(y1, y2) ~ x, data = panel, id = ~ id, wave = ~ wave, time = ~ time,
+    n_factors = 1L, draws = 2L, control = quiet
+  )
+  start <- coef(base)
+  start[grep("^threshold\\[", names(start))] <- -8
+  list(panel = panel, start = start, problem = base$cache$problem)
+}
+
+test_that("BFGS, L-BFGS-B and nlminb reject an overflowing threshold trial", {
+  prepared <- overflow_start()
+  objective <- function(theta) {
+    value <- attitudedyn:::attitudedyn_eval_cpp(
+      prepared$problem, theta, TRUE, 0L, FALSE, 1L, FALSE, FALSE, FALSE, NULL, NULL
+    )$objective
+    if (!is.finite(value)) 1e12 else -value
+  }
+  bfgs <- optim(prepared$start, objective, method = "BFGS", control = list(maxit = 4L))
+  lbfgs <- optim(prepared$start, objective, method = "L-BFGS-B", control = list(maxit = 4L))
+  bounded <- nlminb(prepared$start, objective, control = list(iter.max = 4L))
+  expect_lt(bfgs$value, 1e11)
+  expect_lt(lbfgs$value, 1e11)
+  expect_lt(bounded$objective, 1e11)
+  expect_true(all(is.finite(bfgs$par)))
+  expect_true(all(bfgs$par[grep("^threshold\\[", names(prepared$start))] <= 50))
+
+  fit <- suppressWarnings(attitudedyn(
+    cbind(y1, y2) ~ x, data = prepared$panel, id = ~ id, wave = ~ wave, time = ~ time,
+    n_factors = 1L, draws = 2L, start = prepared$start,
+    control = attitudedyn_control(maxit = 4L, n_threads = 1L, vcov = "none")
+  ))
+  expect_true(is.finite(fit$loglik))
+  expect_gt(fit$loglik, -1e6)
+  expect_true(all(is.finite(coef(fit))))
+  expect_true(all(coef(fit)[grep("^threshold\\[", names(coef(fit)))] <= 50))
+
+  numeric_fit <- suppressWarnings(attitudedyn(
+    cbind(y1, y2) ~ x, data = prepared$panel, id = ~ id, wave = ~ wave, time = ~ time,
+    n_factors = 1L, draws = 2L, start = prepared$start,
+    control = attitudedyn_control(
+      maxit = 1L, n_threads = 1L, vcov = "none", use_gradient = FALSE
+    )
+  ))
+  expect_true(is.finite(numeric_fit$loglik))
+  expect_gt(numeric_fit$loglik, -1e6)
+})
+
 test_that("a short fit returns the methods the package promises", {
   panel <- panel_small()
   fit <- suppressWarnings(attitudedyn(
@@ -79,4 +178,9 @@ test_that("a short fit returns the methods the package promises", {
   expect_true(is.finite(wald$p.value))
   predicted <- predict(fit, type = "class", n_draws = 2)
   expect_true(all(predicted$y1 %in% 1:3))
+  path <- tempfile(fileext = ".rds")
+  saveRDS(fit, path)
+  loaded <- readRDS(path)
+  expect_equal(persistence_matrix(loaded), persistence_matrix(fit))
+  expect_equal(variance_decomposition(loaded)$total, variance_decomposition(fit)$total)
 })

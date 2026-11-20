@@ -21,6 +21,12 @@ struct Unpacked {
   int n_factors = 0;
   int n_grad = 0;
   bool identity_correlation = true;
+  // False when a trial coefficient is outside the domain the likelihood can
+  // evaluate: a non-finite value, or a threshold increment whose exponential
+  // gap would overflow. Callers that are exploring (a line search) turn that
+  // into a rejected step. Callers that are reporting a fitted model still see
+  // a defined parameter vector.
+  bool parameters_ok = true;
   double penalty = 0.0;
 
   std::vector<double> wave_effect;  // J * T

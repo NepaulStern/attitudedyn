@@ -65,8 +65,50 @@ full_from_free <- function(theta_free, theta_template, layout) {
   theta
 }
 
+# saveRDS keeps the fitted coefficients but not the external pointer to the
+# prepared panel. Rebuild that pointer from the stored inputs so a reloaded
+# fit can still report persistence, scores, and the variance decomposition.
+ensure_problem <- function(object) {
+  if (!inherits(object, "attitudedyn")) {
+    cli::cli_abort("{.arg object} must be an {.cls attitudedyn} fit.")
+  }
+  if (!is.environment(object$cache)) object$cache <- new.env(parent = emptyenv())
+  alive <- FALSE
+  if (!is.null(object$cache$problem)) {
+    alive <- isTRUE(tryCatch({
+      attitudedyn_natural_cpp(object$cache$problem, object$theta_full)
+      TRUE
+    }, error = function(e) FALSE))
+  }
+  if (!alive) {
+    object$cache$problem <- build_problem(
+      object$inputs, object$theta_full, object$layout,
+      object$n_factors, object$draws, object$control, object$contemporaneous
+    )
+    object$cache$layout <- object$layout
+    object$cache$theta_template <- object$theta_full
+  }
+  object
+}
+
 negative_finite <- function(value) {
   if (!is.finite(value)) 1e12 else -value
+}
+
+# A line search can hand the likelihood a coefficient outside the domain
+# (a non-finite value, or a threshold whose exponential gap overflows).
+# That is a rejected trial, not a failure of the fit.
+parameter_domain_failure <- function(condition) {
+  # Only the old unpack exception. Data errors ("a covariate is not finite")
+  # still abort the fit.
+  grepl("threshold increment|exp\\(threshold\\) overflowed", conditionMessage(condition))
+}
+
+finite_gradient <- function(gradient, n) {
+  if (is.null(gradient) || length(gradient) != n || !all(is.finite(gradient))) {
+    return(rep(0, n))
+  }
+  gradient
 }
 
 run_bhhh <- function(start, loglik_fn, score_fn, maxit, reltol, trace) {
@@ -75,21 +117,31 @@ run_bhhh <- function(start, loglik_fn, score_fn, maxit, reltol, trace) {
   convergence <- 1L
   for (iteration in seq_len(maxit)) {
     scores <- score_fn(theta)
+    if (!all(is.finite(scores))) break
     gradient <- colSums(scores)
     information <- crossprod(scores)
     ridge <- 1e-8 * mean(diag(information))
     if (!is.finite(ridge) || ridge == 0) ridge <- 1e-6
     direction <- tryCatch(solve(information + diag(ridge, nrow(information)), gradient),
                           error = function(e) gradient)
+    if (!all(is.finite(direction))) break
     step <- 1
     accepted <- current
     candidate <- theta
-    for (halving in seq_len(12L)) {
+    improved <- FALSE
+    # A full scoring step on an unscaled panel can be far too long. Halve
+    # until the trial stays inside the domain and does not decrease the
+    # log-likelihood. A failed search keeps the current point.
+    for (halving in seq_len(30L)) {
       candidate <- theta + step * direction
       accepted <- loglik_fn(candidate)
-      if (is.finite(accepted) && accepted >= current - 1e-8) break
+      if (is.finite(accepted) && accepted >= current - 1e-8) {
+        improved <- TRUE
+        break
+      }
       step <- step / 2
     }
+    if (!improved) break
     if (trace > 0L) {
       cat(sprintf("BHHH iteration %d loglik %.6f\n", iteration, accepted))
     }
@@ -279,27 +331,49 @@ attitudedyn <- function(formula, data, id, wave, time = NULL, time_grid = NULL,
   cache$layout <- layout
 
   loglik_of <- function(theta_free) {
-    evaluation <- attitudedyn_eval_cpp(
-      cache$problem, theta_free, TRUE,
-      numerics_index(control$numerics), control$fortran_ghk, control$n_threads,
-      FALSE, FALSE, FALSE, NULL, NULL
+    value <- tryCatch(
+      attitudedyn_eval_cpp(
+        cache$problem, theta_free, TRUE,
+        numerics_index(control$numerics), control$fortran_ghk, control$n_threads,
+        FALSE, FALSE, FALSE, NULL, NULL
+      )$objective,
+      error = function(e) {
+        if (parameter_domain_failure(e)) NA_real_ else stop(e)
+      }
     )
-    evaluation$objective
+    if (is.finite(value) && value > best_loglik) {
+      best_loglik <<- value
+      best_theta <<- theta_free
+    }
+    value
   }
   gradient_of <- function(theta_free) {
-    evaluation <- attitudedyn_eval_cpp(
-      cache$problem, theta_free, TRUE,
-      numerics_index(control$numerics), control$fortran_ghk, control$n_threads,
-      TRUE, FALSE, FALSE, NULL, NULL
+    gradient <- tryCatch(
+      attitudedyn_eval_cpp(
+        cache$problem, theta_free, TRUE,
+        numerics_index(control$numerics), control$fortran_ghk, control$n_threads,
+        TRUE, FALSE, FALSE, NULL, NULL
+      )$gradient,
+      error = function(e) {
+        if (parameter_domain_failure(e)) NULL else stop(e)
+      }
     )
-    evaluation$gradient
+    finite_gradient(gradient, length(theta_free))
   }
   scores_of <- function(theta_free) {
-    evaluation <- attitudedyn_eval_cpp(
-      cache$problem, theta_free, TRUE,
-      numerics_index(control$numerics), control$fortran_ghk, control$n_threads,
-      TRUE, TRUE, FALSE, NULL, NULL
+    evaluation <- tryCatch(
+      attitudedyn_eval_cpp(
+        cache$problem, theta_free, TRUE,
+        numerics_index(control$numerics), control$fortran_ghk, control$n_threads,
+        TRUE, TRUE, FALSE, NULL, NULL
+      ),
+      error = function(e) {
+        if (parameter_domain_failure(e)) NULL else stop(e)
+      }
     )
+    if (is.null(evaluation) || !is.finite(evaluation$objective)) {
+      return(matrix(0, nrow = inputs$n_persons, ncol = length(theta_free)))
+    }
     matrix(evaluation$person_score, ncol = length(theta_free), byrow = TRUE)
   }
 
@@ -308,6 +382,11 @@ attitudedyn <- function(formula, data, id, wave, time = NULL, time_grid = NULL,
   names(free_start) <- free_names
   if (!length(free_start)) cli::cli_abort("Every coefficient is fixed, so there is nothing to estimate.")
 
+  # Best finite point seen by the line search. A rejected trial does not
+  # replace it, and the reported fit is this point when the optimiser
+  # returns a step that left the domain.
+  best_theta <- free_start
+  best_loglik <- -Inf
   objective <- loglik_of(free_start)
   if (!is.finite(objective)) {
     cli::cli_abort("The log-likelihood is not finite at the starting values.")
@@ -336,7 +415,11 @@ attitudedyn <- function(formula, data, id, wave, time = NULL, time_grid = NULL,
     )
     convergence <- fitted_optim$convergence
     coefficients <- fitted_optim$par
-    loglik <- -fitted_optim$value
+    loglik <- if (is.finite(fitted_optim$value)) -fitted_optim$value else NA_real_
+  }
+  if (!is.finite(loglik) || (is.finite(best_loglik) && best_loglik > loglik + 1e-8)) {
+    coefficients <- best_theta
+    loglik <- best_loglik
   }
   names(coefficients) <- free_names
   theta_hat <- full_from_free(coefficients, theta_full, layout)

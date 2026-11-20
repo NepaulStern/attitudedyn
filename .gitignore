@@ -11,6 +11,7 @@ src/*.rds
 core/tests/test_core
 validation/fortran/build/
 validation/fortran/run/
+validation/output/
 *.o
 *.so
 .cache/

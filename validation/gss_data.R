@@ -183,6 +183,43 @@ gss_category_counts <- function(panel) {
   counts
 }
 
+# Fortran name of one layout row. Attitude and index2 are the 1-based
+# values stored on the fitted layout, except threshold cuts: those are
+# already 1-based in the coefficient name (tau_3 is the first free cut).
+gss_fortran_name <- function(name, block, attitude, index2) {
+  if (block == "wave_effect") return(sprintf("fixef%d%02d", attitude, index2))
+  if (block == "beta") {
+    stem <- c(
+      "constnt", "age", "hs", "college", "advdegr", "female", "white", "black"
+    )
+    if (index2 <= length(stem)) return(sprintf("%s%d", stem[[index2]], attitude))
+    if (index2 == 9L) return(sprintf("income%d1", attitude))
+    if (index2 == 10L) return(sprintf("income%d2", attitude))
+  }
+  if (block == "persistence") return(sprintf("rho%d%d", attitude, index2))
+  if (block == "loading") return(sprintf("alamb%d%d", index2, attitude))
+  if (block == "threshold") {
+    cut <- as.integer(sub(".*,", "", sub("\\]$", "", name)))
+    return(sprintf("tau%d%d", attitude, cut))
+  }
+  if (block == "chol") return(sprintf("chol%d%d", attitude, index2))
+  stop("No Fortran name for block ", block, ".")
+}
+
+gss_fortran_names <- function(layout) {
+  free <- layout[layout$is_free == 1L, , drop = FALSE]
+  vapply(seq_len(nrow(free)), function(i) {
+    gss_fortran_name(free$name[[i]], free$block[[i]], free$attitude[[i]], free$index2[[i]])
+  }, character(1))
+}
+
+# rho = 2 exp(c) / (1 + exp(c)) - 1, the map used for the published GSS
+# coefficients, which are well inside the range where this expression and
+# the large-|c| form agree.
+gss_natural_persistence <- function(unconstrained) {
+  2 * exp(unconstrained) / (1 + exp(unconstrained)) - 1
+}
+
 # Free coefficients from the last X VECTOR in the replication log, the
 # vector printed just before iteration 8.
 read_gss_estimates <- function(log_path) {
@@ -201,4 +238,176 @@ read_gss_estimates <- function(log_path) {
   name <- vapply(parts, `[[`, character(1), 1L)
   value <- vapply(parts, function(p) as.numeric(gsub("D", "E", p[[2L]], fixed = TRUE)), numeric(1))
   stats::setNames(value, name)
+}
+
+# Point estimates and standard errors from the "estimates and significance"
+# table printed after the last iteration.
+read_gss_estimate_table <- function(log_path) {
+  lines <- readLines(log_path, warn = FALSE)
+  start <- grep("estimates and significance", lines)
+  if (!length(start)) stop("The log has no estimates table.")
+  start <- start[[length(start)]]
+  rows <- list()
+  for (line in lines[(start + 1L):length(lines)]) {
+    match <- regexec(
+      "^\\s*[0-9]+\\s+([A-Za-z0-9]+)\\s+(-?[0-9.]+)\\**\\s+([0-9.]+)\\s+(-?[0-9.]+)",
+      line
+    )
+    found <- regmatches(line, match)[[1L]]
+    if (!length(found)) {
+      if (length(rows)) break
+      next
+    }
+    rows[[length(rows) + 1L]] <- data.frame(
+      fortran = found[[2L]],
+      published = as.numeric(found[[3L]]),
+      published_se = as.numeric(found[[4L]]),
+      published_t = as.numeric(found[[5L]]),
+      stringsAsFactors = FALSE
+    )
+  }
+  if (!length(rows)) stop("The estimates table was empty.")
+  do.call(rbind, rows)
+}
+
+# Six variance blocks, in attitude order, from the end of the replication log.
+read_gss_variance <- function(log_path) {
+  lines <- readLines(log_path, warn = FALSE)
+  start <- grep("variance decomposition for each dependent variable", lines)
+  if (!length(start)) stop("The log has no variance decomposition.")
+  start <- start[[length(start)]]
+  body <- lines[(start + 1L):length(lines)]
+  numbers <- gregexpr("-?[0-9]+\\.[0-9]+", body)
+  values <- regmatches(body, numbers)
+  # Each block contributes x-beta, delta, lambda, omega (size and share) and total.
+  sizes <- list()
+  cursor <- 1L
+  for (line_values in values) {
+    if (!length(line_values)) next
+    if (length(line_values) == 2L) {
+      sizes[[length(sizes) + 1L]] <- as.numeric(line_values[[1L]])
+    } else if (length(line_values) == 1L && length(sizes) %% 5L == 4L) {
+      sizes[[length(sizes) + 1L]] <- as.numeric(line_values[[1L]])
+    }
+  }
+  if (length(sizes) < 30L) stop("Expected 6 variance blocks, found ", length(sizes), " numbers.")
+  sizes <- unlist(sizes)[seq_len(30L)]
+  data.frame(
+    attitude_index = rep(seq_len(6L), each = 5L),
+    component = rep(c("covariate", "wave_effect", "factor", "shock", "total"), 6L),
+    published = sizes,
+    stringsAsFactors = FALSE
+  )
+}
+
+gss_comparison <- function(fit, log_path) {
+  layout_names <- gss_fortran_names(fit$layout)
+  shipped <- read_gss_estimates(log_path)
+  if (!identical(layout_names, names(shipped))) {
+    stop(
+      "Free-coefficient order does not match the replication log.\n",
+      "First layout name: ", layout_names[[1L]], "\n",
+      "First log name: ", names(shipped)[[1L]]
+    )
+  }
+  table <- read_gss_estimate_table(log_path)
+  if (!identical(table$fortran, names(shipped))) {
+    stop("The estimates table is not in the same order as the X VECTOR.")
+  }
+  estimates <- coef(fit)
+  se <- tryCatch(sqrt(diag(vcov(fit, type = "opg_centered"))), error = function(e) {
+    rep(NA_real_, length(estimates))
+  })
+  coefficients <- data.frame(
+    fortran = names(shipped),
+    term = names(estimates),
+    estimate = as.numeric(estimates),
+    published = as.numeric(shipped),
+    difference = as.numeric(estimates) - as.numeric(shipped),
+    std.error = as.numeric(se),
+    published_se = table$published_se,
+    stringsAsFactors = FALSE
+  )
+  coefficients$se_difference <- coefficients$std.error - coefficients$published_se
+
+  rho_rows <- fit$layout$block == "persistence" & fit$layout$is_free == 1L
+  # Persistence is free for every entry, so the natural matrix is the
+  # transform of the unconstrained coefficients in receiver-major order.
+  published_rho <- matrix(gss_natural_persistence(shipped[grep("^rho", names(shipped))]), 6L, 6L, byrow = TRUE)
+  fitted_rho <- persistence_matrix(fit)
+  dimnames(published_rho) <- dimnames(fitted_rho)
+  if (!identical(rownames(fitted_rho), fit$attitude_names)) {
+    stop("Persistence matrix is not in attitude order.")
+  }
+
+  published_variance <- read_gss_variance(log_path)
+  fitted_variance <- variance_decomposition(fit)
+  variance <- data.frame(
+    attitude = rep(fit$attitude_names, each = 5L),
+    component = published_variance$component,
+    estimate = NA_real_,
+    published = published_variance$published,
+    stringsAsFactors = FALSE
+  )
+  for (i in seq_len(nrow(fitted_variance))) {
+    row <- fitted_variance[i, ]
+    for (component in c("covariate", "wave_effect", "factor", "shock", "total")) {
+      slot <- variance$attitude == row$attitude & variance$component == component
+      variance$estimate[slot] <- row[[component]]
+    }
+  }
+  variance$difference <- variance$estimate - variance$published
+
+  list(
+    coefficients = coefficients,
+    persistence = fitted_rho,
+    published_persistence = published_rho,
+    variance = variance,
+    loglik = as.numeric(fit$loglik),
+    convergence = fit$convergence
+  )
+}
+
+print_gss_comparison <- function(comparison, elapsed = NA_real_) {
+  coefs <- comparison$coefficients
+  abs_diff <- abs(coefs$difference)
+  se_diff <- abs(coefs$se_difference)
+  rho_diff <- abs(comparison$persistence - comparison$published_persistence)
+  var_diff <- abs(comparison$variance$difference)
+  cat(sprintf("convergence %d\n", comparison$convergence))
+  cat(sprintf("elapsed_seconds %.3f\n", elapsed))
+  cat(sprintf("loglik %.16f\n", comparison$loglik))
+  cat(sprintf("published_target %.2f\n", -111389.88))
+  cat(sprintf("coefficient_abs_diff_max %.6g\n", max(abs_diff)))
+  cat(sprintf("coefficient_abs_diff_median %.6g\n", stats::median(abs_diff)))
+  cat(sprintf("se_abs_diff_max %.6g\n", max(se_diff, na.rm = TRUE)))
+  cat(sprintf("se_abs_diff_median %.6g\n", stats::median(se_diff, na.rm = TRUE)))
+  cat(sprintf("persistence_abs_diff_max %.6g\n", max(rho_diff)))
+  cat(sprintf("persistence_abs_diff_median %.6g\n", stats::median(rho_diff)))
+  cat(sprintf("variance_abs_diff_max %.6g\n", max(var_diff, na.rm = TRUE)))
+  cat(sprintf("variance_abs_diff_median %.6g\n", stats::median(var_diff, na.rm = TRUE)))
+  cat("\nCoefficients (unconstrained), refit minus the replication X VECTOR:\n")
+  show <- data.frame(
+    fortran = coefs$fortran,
+    term = coefs$term,
+    estimate = round(coefs$estimate, 6),
+    published = round(coefs$published, 6),
+    difference = round(coefs$difference, 6),
+    std.error = round(coefs$std.error, 4),
+    published_se = round(coefs$published_se, 4),
+    stringsAsFactors = FALSE
+  )
+  print(show, row.names = FALSE, right = FALSE)
+  cat("\nPersistence on (-1, 1), refit minus the transformed replication rho:\n")
+  print(round(comparison$persistence - comparison$published_persistence, 4))
+  cat("\nVariance decomposition, refit minus the replication log:\n")
+  print(data.frame(
+    attitude = comparison$variance$attitude,
+    component = comparison$variance$component,
+    estimate = round(comparison$variance$estimate, 4),
+    published = round(comparison$variance$published, 4),
+    difference = round(comparison$variance$difference, 4),
+    stringsAsFactors = FALSE
+  ), row.names = FALSE)
+  invisible(comparison)
 }

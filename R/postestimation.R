@@ -17,6 +17,7 @@
 #' )
 #' persistence_matrix(fit)
 persistence_matrix <- function(object) {
+  object <- ensure_problem(object)
   natural <- attitudedyn_natural_cpp(object$cache$problem, object$theta_full)
   J <- object$inputs$n_attitudes
   matrix(natural$persistence, J, J, byrow = TRUE,
@@ -31,6 +32,7 @@ persistence_matrix <- function(object) {
 #'   ends and between category 1 and category 2.
 #' @export
 cutpoints <- function(object) {
+  object <- ensure_problem(object)
   natural <- attitudedyn_natural_cpp(object$cache$problem, object$theta_full)
   names(natural$cutpoints) <- object$attitude_names
   natural$cutpoints
@@ -103,6 +105,7 @@ influence_shares <- function(object) {
 #' @return A data frame with one row per attitude.
 #' @export
 variance_decomposition <- function(object) {
+  object <- ensure_problem(object)
   component <- attitudedyn_variance_cpp(
     object$cache$problem, object$theta_full
   )
@@ -164,6 +167,7 @@ lm_test <- function(object, coefficients) {
   if (any(layout$is_free[rows] == 1L)) {
     cli::cli_abort("Each tested coefficient must be fixed in {.arg object}. Refit with {.arg fix}.")
   }
+  object <- ensure_problem(object)
   free_rows <- which(layout$is_free == 1L)
   columns <- c(free_rows, rows)
   evaluation <- attitudedyn_eval_cpp(
