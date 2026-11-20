@@ -1,0 +1,16 @@
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+*.Rcheck/
+..Rcheck/
+src/*.o
+src/*.so
+src/*.dll
+src/*.rds
+core/tests/test_core
+validation/fortran/build/
+validation/fortran/run/
+*.o
+*.so
+.cache/
