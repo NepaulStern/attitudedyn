@@ -11,10 +11,15 @@ if(NOT DEFINED SKBUILD_PLATLIB_DIR)
   message(FATAL_ERROR "This CMake project is meant to be configured by scikit-build-core (pip install ./python).")
 endif()
 
-set(ATTDYN_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../core")
+# A wheel sdist carries the core in ./core. A checkout install
+# (`pip install ./python`) uses the core next to the python directory.
+set(ATTDYN_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/core")
+if(NOT EXISTS "${ATTDYN_CORE_DIR}/include/attitudedyn/api.hpp")
+  set(ATTDYN_CORE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../core")
+endif()
 if(NOT EXISTS "${ATTDYN_CORE_DIR}/include/attitudedyn/api.hpp")
   message(FATAL_ERROR
-    "The attitudedyn C++ core was not found at ${ATTDYN_CORE_DIR}. "
+    "The attitudedyn C++ core was not found. "
     "Install from a checkout of the repository: pip install ./python")
 endif()
 

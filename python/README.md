@@ -89,10 +89,12 @@ accepts `cbind(...)` and bare column names, including `` 0 + `(Intercept)` ``
 to use a column of ones already in the data.
 
 `result.params`, `result.bse`, and `result.pvalues` are named Series.
-`result.vcov()` defaults to the outer product of the person scores (`opg`).
-`opg_centered` centres those scores first, which is the covariance printed
-with the replication estimates. `hessian` and `sandwich` are the other
-covariance options.
+`result.vcov()` defaults to the centred outer product of the person scores
+(`opg_centered`), which is the covariance printed with the replication
+estimates. `opg` skips the centring. `hessian` inverts the negative
+numerical Hessian of the analytic gradient. `sandwich` is that inverse,
+times the uncentred outer product of the scores, times the inverse.
+`summary(vcov_type=...)` selects the same covariance.
 
 BFGS uses the same Nash iteration as `stats::optim(method = "BFGS")` in the
 R package. L-BFGS-B uses SciPy. Both use the analytic gradient. A trial step

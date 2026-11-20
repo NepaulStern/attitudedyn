@@ -64,9 +64,10 @@ person_scores <- function(object) {
   scores[keep, , drop = FALSE]
 }
 
-opg_covariance <- function(scores, center = FALSE) {
-  if (center) scores <- sweep(scores, 2L, colMeans(scores), check.margin = FALSE)
-  information <- crossprod(scores)
+outer_product_of_scores_covariance <- function(person_scores, center = FALSE) {
+  # Invert sum (score)(score)' , or the same sum after subtracting column means.
+  if (center) person_scores <- sweep(person_scores, 2L, colMeans(person_scores), check.margin = FALSE)
+  information <- crossprod(person_scores)
   if (qr(information)$rank < ncol(information)) {
     cli::cli_warn("The outer product of the scores is singular. A ridge was added.")
     information <- information + diag(1e-8 * mean(diag(information)), ncol(information))
@@ -74,27 +75,29 @@ opg_covariance <- function(scores, center = FALSE) {
   solve(information)
 }
 
-numerical_hessian <- function(object) {
+numerical_hessian_of_analytic_gradient <- function(object) {
+  # Central differences of the analytic gradient. The step is
+  # 1e-5 * max(1, |coefficient|). The returned matrix is symmetrised.
   object <- ensure_problem(object)
-  theta <- object$coefficients
-  p <- length(theta)
-  hessian <- matrix(0, p, p)
-  for (j in seq_len(p)) {
-    step <- 1e-5 * max(1, abs(theta[j]))
-    up <- down <- theta
-    up[j] <- up[j] + step
-    down[j] <- down[j] - step
+  coefficients <- object$coefficients
+  n_coefficients <- length(coefficients)
+  hessian <- matrix(0, n_coefficients, n_coefficients)
+  for (column in seq_len(n_coefficients)) {
+    step <- 1e-5 * max(1, abs(coefficients[column]))
+    coefficient_up <- coefficient_down <- coefficients
+    coefficient_up[column] <- coefficient_up[column] + step
+    coefficient_down[column] <- coefficient_down[column] - step
     gradient_up <- attitudedyn_eval_cpp(
-      object$cache$problem, up, TRUE,
+      object$cache$problem, coefficient_up, TRUE,
       numerics_index(object$control$numerics), object$control$fortran_ghk,
       object$control$n_threads, TRUE, FALSE, FALSE, NULL, NULL
     )$gradient
     gradient_down <- attitudedyn_eval_cpp(
-      object$cache$problem, down, TRUE,
+      object$cache$problem, coefficient_down, TRUE,
       numerics_index(object$control$numerics), object$control$fortran_ghk,
       object$control$n_threads, TRUE, FALSE, FALSE, NULL, NULL
     )$gradient
-    hessian[, j] <- (gradient_up - gradient_down) / (2 * step)
+    hessian[, column] <- (gradient_up - gradient_down) / (2 * step)
   }
   0.5 * (hessian + t(hessian))
 }
@@ -108,25 +111,27 @@ vcov.attitudedyn <- function(object, type = NULL, ...) {
   }
   cache <- object$cache
   if (!is.null(cache$vcov) && !is.null(cache$vcov[[type]])) return(cache$vcov[[type]])
-  scores <- person_scores(object)
-  bread <- NULL
+  person_scores_matrix <- person_scores(object)
+  inverse_negative_hessian <- NULL
   if (type %in% c("hessian", "sandwich")) {
     if (object$control$numerics != "stable" || object$contemporaneous != "identity") {
       cli::cli_abort("The numerical Hessian needs analytic gradients, hence stable numerics and an identity correlation.")
     }
-    hessian <- numerical_hessian(object)
-    bread <- tryCatch(solve(-hessian), error = function(e) {
+    # H below is the Hessian of the log-likelihood. The covariance uses -H.
+    hessian_of_log_likelihood <- numerical_hessian_of_analytic_gradient(object)
+    inverse_negative_hessian <- tryCatch(solve(-hessian_of_log_likelihood), error = function(e) {
       cli::cli_abort("The Hessian could not be inverted.")
     })
   }
   estimate <- switch(
     type,
-    opg = opg_covariance(scores, center = FALSE),
-    opg_centered = opg_covariance(scores, center = TRUE),
-    hessian = bread,
+    opg = outer_product_of_scores_covariance(person_scores_matrix, center = FALSE),
+    opg_centered = outer_product_of_scores_covariance(person_scores_matrix, center = TRUE),
+    hessian = inverse_negative_hessian,
     sandwich = {
-      meat <- crossprod(scores)
-      bread %*% meat %*% bread
+      # (-H)^{-1} (S'S) (-H)^{-1}, with S the uncentred person scores.
+      outer_product <- crossprod(person_scores_matrix)
+      inverse_negative_hessian %*% outer_product %*% inverse_negative_hessian
     }
   )
   colnames(estimate) <- rownames(estimate) <- names(object$coefficients)
@@ -148,10 +153,24 @@ confint.attitudedyn <- function(object, parm = NULL, level = 0.95, type = NULL, 
   out[parm, , drop = FALSE]
 }
 
+#' Summarise a fitted attitude model
+#'
+#' @param object A fitted model.
+#' @param vcov_type Covariance passed to [vcov()]. `"opg_centered"` centres
+#'   the person scores and inverts their outer product. `"hessian"` inverts
+#'   the negative numerical Hessian of the analytic gradient. `"sandwich"`
+#'   is that inverse, times the uncentred outer product of the scores, times
+#'   the inverse. The default is the covariance stored with the fit.
+#' @param type The same choice as `vcov_type`.
+#' @param ... Unused.
+#' @return An object of class `"summary.attitudedyn"`.
 #' @export
-summary.attitudedyn <- function(object, type = NULL, ...) {
+summary.attitudedyn <- function(object, vcov_type = NULL, type = NULL, ...) {
+  if (is.null(vcov_type)) vcov_type <- type
+  if (is.null(vcov_type)) vcov_type <- object$control$vcov
+  vcov_type <- match.arg(vcov_type, c("opg", "opg_centered", "hessian", "sandwich", "none"))
   estimates <- coef(object)
-  variance <- tryCatch(vcov(object, type = type), error = function(e) NULL)
+  variance <- tryCatch(vcov(object, type = vcov_type), error = function(e) NULL)
   if (is.null(variance)) {
     se <- rep(NA_real_, length(estimates))
   } else {
@@ -164,7 +183,7 @@ summary.attitudedyn <- function(object, type = NULL, ...) {
   object$summary <- list(
     coefficients = table,
     natural = natural,
-    type = if (is.null(type)) object$control$vcov else type
+    type = vcov_type
   )
   class(object) <- c("summary.attitudedyn", class(object))
   object

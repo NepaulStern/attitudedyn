@@ -194,11 +194,12 @@ class AttitudeDynResult:
         Parameters
         ----------
         type :
-            ``"opg"`` (the default stored with the fit) is the inverse outer
-            product of the person scores. ``"opg_centered"`` centres those
-            scores first. ``"hessian"`` is the inverse negative numerical
-            Hessian of the analytic gradient. ``"sandwich"`` is the robust
-            covariance. ``"none"`` raises.
+            ``"opg_centered"`` centres the person scores and inverts their
+            outer product. It is the default stored with a fit.
+            ``"opg"`` is that inverse without centring. ``"hessian"`` inverts
+            the negative numerical Hessian of the analytic gradient.
+            ``"sandwich"`` is that inverse, times the uncentred outer product
+            of the scores, times the inverse. ``"none"`` raises.
 
         Returns
         -------
@@ -218,48 +219,57 @@ class AttitudeDynResult:
                 "The numerical Hessian needs analytic gradients, hence stable numerics and an identity correlation."
             )
         names = list(self.params.index)
+        # opg inverts S'S. opg_centered subtracts the column means first.
+        # hessian inverts -H, the negative Jacobian of the analytic gradient.
+        # sandwich is (-H)^{-1} (S'S) (-H)^{-1} with S uncentred.
         if chosen in {"opg", "opg_centered", "sandwich"}:
-            scores = self._person_scores(chosen)
+            person_scores = self._person_scores(chosen)
             if chosen == "opg_centered":
-                scores = scores - scores.mean(axis=0, keepdims=True)
-            meat = scores.T @ scores
+                person_scores = person_scores - person_scores.mean(axis=0, keepdims=True)
+            outer_product = person_scores.T @ person_scores
         else:
-            meat = None
+            outer_product = None
         if chosen in {"hessian", "sandwich"}:
-            hessian = self._numerical_hessian()
+            hessian_of_log_likelihood = self._numerical_hessian_of_analytic_gradient()
             try:
-                bread = np.linalg.inv(-hessian)
+                inverse_negative_hessian = np.linalg.inv(-hessian_of_log_likelihood)
             except np.linalg.LinAlgError as exc:
                 raise ValueError("The Hessian could not be inverted.") from exc
         else:
-            bread = None
+            inverse_negative_hessian = None
         if chosen in {"opg", "opg_centered"}:
-            estimate = _invert_information(meat)
+            estimate = _invert_information(outer_product)
         elif chosen == "hessian":
-            estimate = bread
+            estimate = inverse_negative_hessian
         else:
-            estimate = bread @ meat @ bread
+            estimate = inverse_negative_hessian @ outer_product @ inverse_negative_hessian
         frame = pd.DataFrame(estimate, index=names, columns=names)
         self._vcov_cache[chosen] = frame
         return frame
 
-    def _numerical_hessian(self) -> np.ndarray:
-        theta = self.params.to_numpy()
-        p = theta.size
-        hessian = np.zeros((p, p), dtype=np.float64)
-        for j in range(p):
-            step = 1e-5 * max(1.0, abs(theta[j]))
-            up = theta.copy()
-            down = theta.copy()
-            up[j] += step
-            down[j] -= step
+    def _numerical_hessian_of_analytic_gradient(self) -> np.ndarray:
+        """Central-difference Jacobian of the analytic gradient, then symmetrised.
+
+        The step for coefficient j is ``1e-5 * max(1, abs(coefficient_j))``.
+        """
+        coefficients = self.params.to_numpy()
+        n_coefficients = coefficients.size
+        hessian = np.zeros((n_coefficients, n_coefficients), dtype=np.float64)
+        for column in range(n_coefficients):
+            step = 1e-5 * max(1.0, abs(coefficients[column]))
+            coefficient_up = coefficients.copy()
+            coefficient_down = coefficients.copy()
+            coefficient_up[column] += step
+            coefficient_down[column] -= step
             gradient_up = np.asarray(
-                self._evaluate(up, want_gradient=True, want_scores=False)["gradient"], dtype=np.float64
+                self._evaluate(coefficient_up, want_gradient=True, want_scores=False)["gradient"],
+                dtype=np.float64,
             )
             gradient_down = np.asarray(
-                self._evaluate(down, want_gradient=True, want_scores=False)["gradient"], dtype=np.float64
+                self._evaluate(coefficient_down, want_gradient=True, want_scores=False)["gradient"],
+                dtype=np.float64,
             )
-            hessian[:, j] = (gradient_up - gradient_down) / (2.0 * step)
+            hessian[:, column] = (gradient_up - gradient_down) / (2.0 * step)
         return 0.5 * (hessian + hessian.T)
 
     def conf_int(self, alpha: float = 0.05, type: str | None = None) -> pd.DataFrame:
@@ -331,20 +341,24 @@ class AttitudeDynResult:
             frame["conf_high"] = interval.iloc[:, 1].to_numpy()
         return frame
 
-    def summary(self, type: str | None = None) -> str:
+    def summary(self, vcov_type: str | None = None, type: str | None = None) -> str:
         """Return a text summary of the fit, the coefficients, and the persistence matrix.
 
         Parameters
         ----------
-        type :
+        vcov_type :
             Covariance passed to :meth:`vcov`. The printed table uses whatever
             that call can compute; missing standard errors are left blank.
+            The default is the covariance stored with the fit.
+        type :
+            The same choice as ``vcov_type``.
 
         Returns
         -------
         str
         """
-        chosen = self._vcov_type if type is None else type
+        chosen = vcov_type if vcov_type is not None else type
+        chosen = self._vcov_type if chosen is None else chosen
         header = [
             "Dynamic ordinal attitude model",
             f"Log-likelihood: {self.loglik:.6f}",
@@ -359,7 +373,7 @@ class AttitudeDynResult:
             "Coefficients (unconstrained scale):",
         ]
         try:
-            table = self.to_dataframe(type=type)
+            table = self.to_dataframe(type=chosen)
             body = table.to_string(float_format=lambda value: f"{value: .6g}")
         except (ValueError, np.linalg.LinAlgError) as exc:
             body = self.params.to_frame("estimate").to_string(float_format=lambda value: f"{value: .6g}")

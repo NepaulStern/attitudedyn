@@ -66,11 +66,12 @@ The wrapper turns that objective into `1e12` so the line search can reject
 the step and continue. The reported fit is the best finite point seen during
 the search.
 
-Standard errors default to the inverse outer product of the person scores
-(`vcov="opg"`). `opg_centered` subtracts the column means first, which is
-the covariance printed with the replication estimates. `hessian` is the
-inverse negative numerical Hessian of the analytic gradient. `sandwich`
-combines that Hessian with the outer product of the scores.
+Standard errors default to the centred outer product of the person scores
+(`vcov="opg_centered"`), which is the covariance printed with the
+replication estimates. `opg` skips the centring. `hessian` inverts the
+negative numerical Hessian of the analytic gradient. `sandwich` is that
+inverse, times the uncentred outer product of the scores, times the
+inverse. `summary(vcov_type=...)` selects the same covariance.
 
 `AttitudeDynResult` exposes `params`, `bse`, `pvalues`, `conf_int`,
 `summary`, `loglik`, `aic`, `bic`, `nobs`, `vcov`, `persistence_matrix`,

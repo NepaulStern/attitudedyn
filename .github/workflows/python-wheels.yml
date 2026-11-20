@@ -1,0 +1,67 @@
+# Build wheels with cibuildwheel and run pytest on each wheel.
+# Artifacts are uploaded. Nothing is published to PyPI.
+name: python-wheels
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  build_wheels:
+    name: ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            label: manylinux-x86_64
+            arch_linux: x86_64
+            arch_macos: arm64
+            arch_windows: AMD64
+          - os: ubuntu-24.04-arm
+            label: manylinux-aarch64
+            arch_linux: aarch64
+            arch_macos: arm64
+            arch_windows: AMD64
+          - os: macos-15
+            label: macos-arm64
+            arch_linux: x86_64
+            arch_macos: arm64
+            arch_windows: AMD64
+          - os: macos-15-intel
+            label: macos-x86_64
+            arch_linux: x86_64
+            arch_macos: x86_64
+            arch_windows: AMD64
+          - os: windows-latest
+            label: windows-amd64
+            arch_linux: x86_64
+            arch_macos: arm64
+            arch_windows: AMD64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Stage the C++ core inside the Python project
+        run: python python/tools/stage_wheel_project.py
+
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v4.3.5
+        with:
+          package-dir: wheel-stage
+          output-dir: wheelhouse
+        env:
+          CIBW_ARCHS_LINUX: ${{ matrix.arch_linux }}
+          CIBW_ARCHS_MACOS: ${{ matrix.arch_macos }}
+          CIBW_ARCHS_WINDOWS: ${{ matrix.arch_windows }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.label }}
+          path: wheelhouse/*.whl

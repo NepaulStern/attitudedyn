@@ -21,7 +21,7 @@ panel <- simulate_attitudes(n_persons = 30, n_waves = 3, n_factors = 1, seed = 1
 head(panel)
 ```
 
-`maxit = 0` evaluates the starting values and does not iterate. `vcov = "opg"` stores the inverse outer product of the person scores, which is what `summary()`, `tidy()`, and `glance()` report.
+`maxit = 0` evaluates the starting values and does not iterate. `vcov = "opg"` stores the inverse outer product of the person scores, which is what `summary()`, `tidy()`, and `glance()` report for this fit. The default covariance is `opg_centered`. `summary(fit, vcov_type = "hessian")` and `summary(fit, vcov_type = "sandwich")` select the other two.
 
 ```{r}
 fit <- attitudedyn(

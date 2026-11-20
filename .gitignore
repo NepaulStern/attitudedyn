@@ -22,5 +22,7 @@ __pycache__/
 python/build/
 python/_skbuild/
 python/dist/
+wheel-stage/
+wheelhouse/
 python/src/attitudedyn/_core*.so
 python/src/attitudedyn/_core*.pyd
