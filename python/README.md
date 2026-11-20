@@ -47,9 +47,11 @@ including `` 0 + `(Intercept)` `` to use a column of ones already in the data.
 `result.params`, `result.bse`, and `result.pvalues` are named Series.
 `result.vcov()` defaults to the outer product of the person scores (`opg`).
 `opg_centered`, `hessian`, and `sandwich` are the other covariance options.
-BFGS and L-BFGS-B use the analytic gradient. A trial step that is not finite,
-or whose threshold increment would overflow, is reported to the optimiser as
-a large finite penalty with a zero gradient, so the line search rejects it.
+BFGS uses the same Nash iteration as `stats::optim(method = "BFGS")` in the
+R package. L-BFGS-B uses SciPy. Both use the analytic gradient. A trial step
+that is not finite, or whose threshold increment would overflow, is reported
+to the optimiser as a large finite penalty with a zero gradient, so the line
+search rejects it.
 
 The GSS check is `python/validation/run_gss.py`. Build notes are in
 `notes/PYTHON_GUIDE.md`.

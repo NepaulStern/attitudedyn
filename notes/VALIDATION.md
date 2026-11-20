@@ -77,6 +77,8 @@ Rscript validation/run_gss.R --threads 20
 
 `validation/run_gss.R --refit` starts BFGS from the shipped coefficients. That is optional. The check above does not refit.
 
+`validation/replicate_gss_exhibits.R` evaluates those coefficients, with centred outer-product standard errors, and writes the coefficient table, the persistence matrix, the variance decomposition, and the impulse-response figure under `validation/output/`. The median and maximum absolute differences against the replication log are in `notes/GSS_EXHIBITS.md`. The Python counterpart is `python/validation/replicate_gss_exhibits.py`. Neither script starts the optimiser.
+
 The core unit tests and the R tests use small simulated panels:
 
 ```bash

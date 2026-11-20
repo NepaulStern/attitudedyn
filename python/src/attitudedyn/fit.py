@@ -10,6 +10,7 @@ import pandas as pd
 from scipy.optimize import minimize
 
 from attitudedyn import _core
+from attitudedyn.bfgs import minimize_bfgs
 from attitudedyn.coefficients import apply_fix, apply_start, default_theta, free_from_full
 from attitudedyn.prepare import layout_frame, parse_formula, prepare_panel
 from attitudedyn.result import AttitudeDynResult
@@ -59,10 +60,13 @@ def fit(
     coefficients and by person-level factors. The whole latent attitude
     carries forward from one wave to the next. The likelihood is the GHK
     simulated likelihood in the authors' replication package, evaluated by
-    the shared C++ core. ``scipy.optimize.minimize`` maximises it. A trial
-    step that is not finite, or whose threshold increment would overflow,
-    is a rejected step: the objective reported to the optimiser is a large
-    finite penalty and the gradient is zero, so the line search continues.
+    the shared C++ core. BFGS is the Nash iteration used by
+    ``stats::optim(method = "BFGS")``, so the same start, analytic gradient,
+    and ``reltol`` follow the same steps as the R package. L-BFGS-B and
+    Nelder-Mead use ``scipy.optimize.minimize``. A trial step that is not
+    finite, or whose threshold increment would overflow, is a rejected
+    step: the objective reported to the optimiser is a large finite penalty
+    and the gradient is zero, so the line search continues.
 
     Parameters
     ----------
@@ -111,11 +115,14 @@ def fit(
         on this value. The default is 1.
     optimizer :
         ``"bfgs"`` or ``"l-bfgs-b"``. ``"nelder-mead"`` is derivative-free.
+        ``"bfgs"`` is the iteration ``stats::optim`` uses for BFGS.
     maxit :
         Maximum optimiser iterations. ``0`` evaluates ``start`` and returns.
     reltol :
-        Relative tolerance passed to the optimiser as ``gtol`` (and, for
-        L-BFGS-B, ``ftol``).
+        Relative tolerance on the objective. For BFGS this is ``optim``'s
+        ``reltol``: a step that does not reduce the objective by
+        ``reltol * (|f| + reltol)`` is not an improvement. L-BFGS-B passes
+        the same number to SciPy as ``ftol`` and ``gtol``.
     use_gradient :
         Pass the analytic gradient to BFGS and L-BFGS-B. Turn this off only
         to compare with a numeric gradient.
@@ -324,23 +331,42 @@ def fit(
     convergence = 0
     coefficients = free_start.copy()
     if maxit > 0:
+        # Analytic BFGS uses the same Nash iteration as stats::optim, so a
+        # refit from the same coefficients stops at the same point as R.
+        # The other methods stay with SciPy.
+        use_nash_bfgs = method == "BFGS" and analytic
+
+        def report_iteration(iteration: int, neg_loglik: float) -> None:
+            if trace:
+                print(f"iter {iteration:4d} loglik {-neg_loglik:.6f}")
+
         options: dict = {"maxiter": int(maxit)}
-        if method == "BFGS":
-            options["gtol"] = float(reltol)
-        elif method == "L-BFGS-B":
+        if method == "L-BFGS-B":
             options["ftol"] = float(reltol)
             options["gtol"] = float(reltol)
-        else:
+        elif method != "BFGS":
             options["xatol"] = float(reltol)
             options["fatol"] = float(reltol)
         try:
-            fitted = minimize(
-                objective,
-                free_start,
-                method=method,
-                jac=jacobian if analytic and method != "Nelder-Mead" else None,
-                options=options,
-            )
+            if use_nash_bfgs:
+                fitted = minimize_bfgs(
+                    objective,
+                    jacobian,
+                    free_start,
+                    maxit=int(maxit),
+                    reltol=float(reltol),
+                    report=report_iteration,
+                )
+            else:
+                if method == "BFGS":
+                    options["gtol"] = float(reltol)
+                fitted = minimize(
+                    objective,
+                    free_start,
+                    method=method,
+                    jac=jacobian if analytic and method != "Nelder-Mead" else None,
+                    options=options,
+                )
         except (FloatingPointError, np.linalg.LinAlgError) as exc:
             warnings.warn(
                 f"The optimiser stopped after a failed trial step ({exc}). The best finite point is reported.",
