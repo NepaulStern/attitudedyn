@@ -1,9 +1,9 @@
 Package: attitudedyn
 Title: The Nepaul-Stern Model of Attitude Stability and Constraint
 Version: 0.1.0
-Authors@R: person("Gabriel", "Mihalache", email = "mihalache@gmail.com", role = c("aut", "cre"))
+Authors@R: person("Gabriel", "Mihalache", email = "mihalache.2@osu.edu", role = c("aut", "cre"))
 Author: Gabriel Mihalache [aut, cre]
-Maintainer: Gabriel Mihalache <mihalache@gmail.com>
+Maintainer: Gabriel Mihalache <mihalache.2@osu.edu>
 Description: Estimates The Nepaul-Stern Model of Attitude Stability and
     Constraint for several Likert-scale attitudes measured on the same
     people across survey waves. The likelihood is a
@@ -28,5 +28,5 @@ Config/testthat/edition: 3
 Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
 SystemRequirements: C++17
-URL: https://gabrielgggg.github.io/NepaulSternAttitudes/, https://doi.org/10.1017/pan.2026.10034, https://doi.org/10.7910/DVN/DUCHYS
+URL: https://nepaulstern.github.io/, https://doi.org/10.1017/pan.2026.10034, https://doi.org/10.7910/DVN/DUCHYS
 Config/roxygen2/version: 8.1.1

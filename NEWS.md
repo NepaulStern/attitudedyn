@@ -5,4 +5,4 @@
 * `simulate()` draws a new panel from a fitted model. `simulate_attitudes()` draws a panel from known parameters.
 * Persistence, impulse responses, influence shares, a variance decomposition, Wald tests, and score tests.
 * The R package and the Python package estimate the same model.
-* The vignette *attitudedyn user guide* walks through the General Social Survey application. A PDF of that guide is `docs/attitudedyn_user_guide.pdf`. The project site is <https://gabrielgggg.github.io/NepaulSternAttitudes/>.
+* The vignette *attitudedyn user guide* walks through the General Social Survey application. A PDF of that guide is `docs/attitudedyn_user_guide.pdf`. The project site is <https://nepaulstern.github.io/>.

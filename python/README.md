@@ -2,7 +2,7 @@
 
 Python interface for The Nepaul-Stern Model of Attitude Stability and Constraint. The model is for several Likert-scale attitudes measured on the same people across survey waves. A person's latent attitude carries forward from one wave to the next, and the recorded answer is the Likert category that latent attitude falls into. Estimation uses a simulated likelihood.
 
-The same model is available from R. The two give the same estimates. The project site is <https://gabrielgggg.github.io/NepaulSternAttitudes/>.
+The same model is available from R. The two give the same estimates. The project site is <https://nepaulstern.github.io/>.
 
 ## Getting started
 
