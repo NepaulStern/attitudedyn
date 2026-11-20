@@ -2,6 +2,7 @@
 ^core/Makefile
 ^notes$
 ^validation$
+^python(/|$)
 ^\.github$
 ^\.gitignore$
 ^.*\.Rproj$

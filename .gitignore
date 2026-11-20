@@ -15,3 +15,12 @@ validation/output/
 *.o
 *.so
 .cache/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+python/build/
+python/_skbuild/
+python/dist/
+python/src/attitudedyn/_core*.so
+python/src/attitudedyn/_core*.pyd
