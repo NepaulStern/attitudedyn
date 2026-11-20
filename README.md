@@ -87,16 +87,16 @@ party         -0.233   -0.079   0.028      0.039  0.467      -0.036
 environment   -0.120    0.007  -0.031     -0.116  0.000       0.281
 ```
 
-Variance decomposition at the same coefficients, rounded to four decimals:
+Variance decomposition at the same coefficients, rounded to four decimals. The covariate column is the replication program's x-beta piece, the variance of the wave effect plus the covariate index. The shock column is its omega piece, the average finite-horizon persistence contribution.
 
 | Attitude | Covariate | Wave effect | Factor | Shock | Total |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| ideology | 0.0502 | 0.0071 | 1.0158 | 1.1312 | 2.2043 |
-| military | 0.0789 | 0.0279 | 0.2564 | 1.3706 | 1.7337 |
-| welfare | 0.0534 | 0.0076 | 0.3143 | 1.4839 | 1.8591 |
-| immigrants | 0.0696 | 0.1780 | 0.1506 | 1.3009 | 1.6991 |
-| party | 0.1721 | 0.0143 | 1.6801 | 1.4445 | 3.3110 |
-| environment | 0.0700 | 0.0338 | 0.5093 | 1.1440 | 1.7571 |
+| ideology | 0.0554 | 0.0067 | 1.0158 | 1.0752 | 2.1531 |
+| military | 0.0807 | 0.0120 | 0.2564 | 1.2305 | 1.5796 |
+| welfare | 0.0677 | 0.0080 | 0.3143 | 1.2813 | 1.6713 |
+| immigrants | 0.1157 | 0.0259 | 0.1506 | 1.1801 | 1.4724 |
+| party | 0.1525 | 0.0082 | 1.6801 | 1.2414 | 3.0822 |
+| environment | 0.0882 | 0.0442 | 0.5093 | 1.0873 | 1.7290 |
 
 Rows of the figure receive the shock named in the column. Horizon 0 is the impact.
 

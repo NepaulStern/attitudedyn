@@ -174,6 +174,8 @@ test_that("a short fit returns the methods the package promises", {
   expect_equal(irf$response[1, , ], diag(2), tolerance = 1e-8, ignore_attr = TRUE)
   parts <- variance_decomposition(fit)
   expect_equal(nrow(parts), 2L)
+  expect_equal(parts$total, parts$covariate + parts$wave_effect + parts$factor + parts$shock)
+  expect_true(all(parts$shock >= 1))
   wald <- wald_test(fit, c("beta[y1,x]" = 0))
   expect_true(is.finite(wald$p.value))
   predicted <- predict(fit, type = "class", n_draws = 2)

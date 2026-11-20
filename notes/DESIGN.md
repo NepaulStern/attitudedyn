@@ -28,7 +28,7 @@ The default probability of an interval is the double-precision log of `Phi(b) - 
 
 `coef()` is the unconstrained vector, in the same order the replication program prints its free coefficients: wave effects, slopes, unconstrained persistence, loadings, the correlation factor, and threshold increments. Standard errors default to the inverse outer product of the person scores. `vcov(fit, type = "opg_centered")` centres those scores first. `hessian` and `sandwich` are also available. Significance stars use the normal critical value 1.645 for 10 percent.
 
-`variance_decomposition()` reports the sample variance of the covariate index, the sample variance of the wave effects, the sum of squared loadings, and the long-run variance of the innovation. `impulse_response()` reports powers of the persistence matrix.
+`variance_decomposition()` follows the replication program. The covariate piece is the variance of the wave effect plus the covariate index, the wave-effect piece is the variance of the wave effect, the factor piece is the sum of squared loadings, and the shock piece averages the finite-horizon persistence contribution over included people. Both variances skip each person's first observed wave and then keep every later wave in the window. `impulse_response()` reports powers of the persistence matrix.
 
 ## What is deliberately outside the package
 

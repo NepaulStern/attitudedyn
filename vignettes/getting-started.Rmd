@@ -1,8 +1,8 @@
 ---
-title: "Getting started with attitudedyn"
+title: "Getting started"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Getting started with attitudedyn}
+  %\VignetteIndexEntry{Getting started}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -11,15 +11,17 @@ vignette: >
 knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
-`attitudedyn` fits a panel of ordinal attitudes by simulated maximum likelihood, following the Nepaul and Stern (2026) replication package. Several Likert items measured on the same people over several waves share a persistence matrix and a small number of person factors. The whole latent attitude carries forward from one wave to the next.
+`attitudedyn` fits a panel of ordinal attitudes by simulated maximum likelihood. Several items measured on the same people over several waves share a persistence matrix and a small number of person factors. The whole latent attitude carries forward from one wave to the next. The General Social Survey application uses six attitudes, eight waves, and 11,252 people. That likelihood is too large to refit while the package is checked, so the chunks below run the same functions on a small simulated panel, and the GSS call is shown as it is used in `validation/run_gss.R`.
+
+The data are in long form: one row is one person in one wave. Outcomes are integers `1, ..., K`. The cut between category 1 and category 2 is normalised at zero.
 
 ```{r}
 library(attitudedyn)
-panel <- simulate_attitudes(n_persons = 40, n_waves = 3, n_factors = 1, seed = 1)
+panel <- simulate_attitudes(n_persons = 30, n_waves = 3, n_factors = 1, seed = 1)
 head(panel)
 ```
 
-The data are in long form: one row is one person in one wave. Outcomes are integers `1, ..., K`. The cut between category 1 and category 2 is normalised at zero, so that numbering is part of the model.
+`maxit = 0` evaluates the starting values and does not iterate. `vcov = "opg"` stores the inverse outer product of the person scores, which is what `summary()`, `tidy()`, and `glance()` report.
 
 ```{r}
 fit <- attitudedyn(
@@ -29,16 +31,82 @@ fit <- attitudedyn(
   wave = ~ wave,
   time = ~ time,
   n_factors = 1,
-  draws = 6,
-  control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "none")
+  draws = 4,
+  control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "opg")
 )
 summary(fit)
 ```
 
-`coef()` returns the unconstrained coefficients that the optimiser sees. Persistence coefficients are transformed to the interval (-1, 1) inside the likelihood. `persistence_matrix()` reports that scale: the row is the attitude that receives the lag, and the column is the attitude that is lagged.
+`coef()` returns the unconstrained coefficients that the optimiser sees. Persistence coefficients are mapped onto (-1, 1) inside the likelihood. `tidy()` is one row per coefficient and `glance()` is one row of fit statistics.
+
+```{r}
+head(tidy(fit))
+glance(fit)
+```
+
+`persistence_matrix()` is on the natural scale. The row is the attitude that receives the lag, and the column is the attitude that is lagged.
 
 ```{r}
 persistence_matrix(fit)
 variance_decomposition(fit)
-impulse_response(fit, horizon = 3)$response[, "y1", "y1"]
 ```
+
+`covariate` is the variance of the wave effect plus the covariate index. `wave_effect` is the variance of the wave effect. `factor` is the sum of squared loadings. `shock` is the average, over people, of the finite-horizon persistence contribution. `impulse_response()` raises the natural persistence matrix to successive powers. Horizon 0 is the identity.
+
+```{r, fig.width = 6, fig.height = 4}
+response <- impulse_response(fit, horizon = 4)$response
+matplot(
+  response[, "y1", ],
+  type = "b",
+  xlab = "Horizon",
+  ylab = "Response of y1",
+  lty = 1,
+  pch = 16
+)
+legend("topright", colnames(response[, "y1", ]), col = seq_len(2), lty = 1, pch = 16, bty = "n")
+```
+
+The GSS call has the same shape. It evaluates the replication estimates and does not iterate. Run it from a checkout of the repository, not from an installed package that cannot see `validation/`.
+
+```{r, eval = FALSE}
+source("validation/gss_data.R")
+panel <- read_gss("validation/fortran/data/gss2.prn")
+estimates <- read_gss_estimates("validation/fortran/src/gss_log.txt")
+gss <- attitudedyn(
+  cbind(ideology, military, welfare, immigrants, party, environment) ~
+    0 + `(Intercept)` + age + hs + college + adv + female + white + black +
+    inc_mid + inc_high,
+  data = panel,
+  id = ~ id,
+  wave = ~ wave,
+  time_grid = gss_time_grid(),
+  weights = weight,
+  n_factors = 2,
+  draws = 10,
+  start = unname(estimates),
+  control = attitudedyn_control(maxit = 0, n_threads = 1, vcov = "opg_centered", seed = 1)
+)
+summary(gss)
+tidy(gss)
+glance(gss)
+persistence_matrix(gss)
+variance_decomposition(gss)
+plot_response <- impulse_response(gss, horizon = 8)$response
+```
+
+At those coefficients the variance decomposition, rounded to three decimals as in the replication log, is
+
+```{r}
+gss_variance <- data.frame(
+  attitude = c("ideology", "military", "welfare", "immigrants", "party", "environment"),
+  covariate = c(0.055, 0.081, 0.068, 0.116, 0.152, 0.088),
+  wave_effect = c(0.007, 0.012, 0.008, 0.026, 0.008, 0.044),
+  factor = c(1.016, 0.256, 0.314, 0.151, 1.680, 0.509),
+  shock = c(1.075, 1.231, 1.281, 1.180, 1.241, 1.087),
+  total = c(2.153, 1.580, 1.671, 1.472, 3.082, 1.729),
+  stringsAsFactors = FALSE
+)
+gss_variance
+```
+
+`validation/replicate_gss_exhibits.R` writes the coefficient table, the persistence matrix, and the impulse-response figure. The median and maximum absolute differences from the replication log are in `notes/GSS_EXHIBITS.md`.
