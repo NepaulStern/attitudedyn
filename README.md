@@ -68,8 +68,8 @@ print(result.summary())
 
 The user guide is the place to start. It reads the General Social Survey panel, fits the application, and shows how to read the estimates, the persistence matrix, the impulse responses, the variance decomposition, the predicted Likert categories, and a new panel drawn from the fit.
 
-* R: `vignette("attitudedyn user guide", package = "attitudedyn")`. Source: [`vignettes/user-guide.Rmd`](vignettes/user-guide.Rmd). PDF: [`docs/attitudedyn_user_guide.pdf`](docs/attitudedyn_user_guide.pdf).
-* Python: [`python/docs/user_guide.md`](python/docs/user_guide.md).
+* R: `vignette("attitudedyn user guide", package = "attitudedyn")`. Source: [`vignettes/user-guide.Rmd`](vignettes/user-guide.Rmd). PDF: [`docs/attitudedyn_user_guide.pdf`](https://github.com/gabrielgggg/attitudedyn/blob/master/docs/attitudedyn_user_guide.pdf).
+* Python: [`python/docs/user_guide.md`](https://github.com/gabrielgggg/attitudedyn/blob/master/python/docs/user_guide.md).
 
 Notes on the source layout, for someone changing the package, are in `notes/R_ECOSYSTEM_GUIDE.md` and `notes/PYTHON_GUIDE.md`.
 

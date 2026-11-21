@@ -20,7 +20,9 @@ Examples for every exported function finish in well under a second. The spelling
 
 ## Resubmission
 
-This is a resubmission of version 0.1.0. The previous upload was not accepted because `License: MIT + file LICENSE` shipped the full MIT text in `LICENSE`, which `R CMD check` reported as `License stub is invalid DCF`. `LICENSE` is now the two-line stub:
+This is a resubmission of version 0.1.0. It fixes the invalid file URIs in `README.md`. The links to `docs/attitudedyn_user_guide.pdf` and `python/docs/user_guide.md` are now absolute GitHub URLs. Those paths are listed in `.Rbuildignore` and are not in the package tarball.
+
+The previous upload was not accepted because `License: MIT + file LICENSE` shipped the full MIT text in `LICENSE`, which `R CMD check` reported as `License stub is invalid DCF`. `LICENSE` is now the two-line stub:
 
     YEAR: 2026
     COPYRIGHT HOLDER: Gabriel Mihalache
