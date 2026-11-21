@@ -127,7 +127,7 @@ def ensure_replication_files(root: Path | None = None) -> tuple[Path, Path]:
     return gss_paths(base)
 
 
-def read_gss(path: Path | None = None, n_rows: int = 21648) -> pd.DataFrame:
+def read_gss(path: str | os.PathLike | None = None, n_rows: int = 21648) -> pd.DataFrame:
     """Read ``gss2.prn`` the way the replication loader does.
 
     Parameters
@@ -145,6 +145,7 @@ def read_gss(path: Path | None = None, n_rows: int = 21648) -> pd.DataFrame:
     """
     if path is None:
         path = gss_paths()[0]
+    path = Path(path)
     lines: list[str] = []
     with path.open() as handle:
         for line in handle:
@@ -322,10 +323,11 @@ def category_counts(panel: pd.DataFrame) -> dict[str, list[int]]:
     return counts
 
 
-def read_gss_estimates(log_path: Path | None = None) -> pd.Series:
+def read_gss_estimates(log_path: str | os.PathLike | None = None) -> pd.Series:
     """Free coefficients from the last ``X VECTOR`` before ``iteration = 8``."""
     if log_path is None:
         log_path = gss_paths()[1]
+    log_path = Path(log_path)
     lines = log_path.read_text(errors="replace").splitlines()
     marks = [index for index, line in enumerate(lines) if "iteration = 8" in line]
     if not marks:
@@ -346,10 +348,11 @@ def read_gss_estimates(log_path: Path | None = None) -> pd.Series:
     return pd.Series(values, index=names, name="published")
 
 
-def read_gss_estimate_table(log_path: Path | None = None) -> pd.DataFrame:
+def read_gss_estimate_table(log_path: str | os.PathLike | None = None) -> pd.DataFrame:
     """Point estimates and standard errors from the replication estimates table."""
     if log_path is None:
         log_path = gss_paths()[1]
+    log_path = Path(log_path)
     lines = log_path.read_text(errors="replace").splitlines()
     starts = [index for index, line in enumerate(lines) if "estimates and significance" in line]
     if not starts:
@@ -374,10 +377,11 @@ def read_gss_estimate_table(log_path: Path | None = None) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
-def read_gss_variance(log_path: Path | None = None) -> pd.DataFrame:
+def read_gss_variance(log_path: str | os.PathLike | None = None) -> pd.DataFrame:
     """Six variance blocks, in attitude order, from the end of the replication log."""
     if log_path is None:
         log_path = gss_paths()[1]
+    log_path = Path(log_path)
     lines = log_path.read_text(errors="replace").splitlines()
     starts = [index for index, line in enumerate(lines) if "variance decomposition for each dependent variable" in line]
     if not starts:

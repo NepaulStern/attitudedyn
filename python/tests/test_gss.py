@@ -122,3 +122,10 @@ def test_philox_loglik_and_gradient_match_across_threads(gss_panel):
     assert one.gradient.shape == (164,)
     assert np.all(np.isfinite(one.gradient))
     assert np.array_equal(one.gradient, four.gradient)
+
+
+def test_readers_accept_plain_strings(gss_panel):
+    panel = read_gss(str(DATA))
+    assert panel.shape == gss_panel.shape
+    estimates = read_gss_estimates(str(LOG))
+    assert estimates.equals(read_gss_estimates(LOG))
