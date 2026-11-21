@@ -1,3 +1,7 @@
+# attitudedyn 0.1.1
+
+* Python: the GSS readers accept plain string paths; wheels for Python 3.14.
+
 # attitudedyn 0.1.0
 
 * Estimate The Nepaul-Stern Model of Attitude Stability and Constraint (Nepaul and Stern, 2026) <doi:10.1017/pan.2026.10034> for several Likert-scale attitudes measured on the same people across survey waves. Estimation is by simulated maximum likelihood.
